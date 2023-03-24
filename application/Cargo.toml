@@ -1,0 +1,22 @@
+[package]
+name = "application"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+kernel = { path = "../kernel" }
+helper = { path = "../helper" }
+async-trait = "0.1.67"
+anyhow = { version = "1.0.70", features = ["backtrace"] }
+tokio = {version = "1.26.0", features = ["full"]}
+tokio-stream = "0.1.12"
+log = "0.4.17"
+derive-new = "0.5.9"
+serde = "1.0.157"
+chrono = "0.4.24"
+marker-blanket = "0.1.0"
+blanket = "0.2.0"
+trait-set = "0.3.0"
+
+[dev-dependencies]
+mockall = "0.11.3"

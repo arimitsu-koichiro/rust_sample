@@ -1,0 +1,13 @@
+[workspace]
+members = ["kernel", "helper", "driver", "application", "bin"]
+resolver = "2"
+
+[profile.release]
+incremental = true
+debug = true
+
+[profile.release.package.openapi]
+debug = false
+
+[profile.release.package."*"]
+debug = false

@@ -1,0 +1,458 @@
+openapi: 3.0.3
+info:
+  contact:
+    name: arimitsu-koichiro
+  description: sample
+  title: sample Backend
+  version: 1.0.0
+servers:
+  - url: /
+paths:
+  /api/v1/status:
+    get:
+      operationId: get_status
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - status
+  /api/v1/auth/status:
+    get:
+      operationId: get_auth_status
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusOk'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - auth
+  /api/v1/auth/signin:
+    post:
+      operationId: signin
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SigninRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusOk'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - auth
+  /api/v1/auth/signout:
+    post:
+      operationId: signout
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusOk'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - auth
+  /api/v1/auth/signup:
+    post:
+      operationId: signup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusOk'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - auth
+  /api/v1/auth/signup/finish:
+    post:
+      operationId: signup_finish
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpFinishRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusOk'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - auth
+  /api/v1/auth/forget_password:
+    post:
+      operationId: forget_password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgetPasswordRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusOk'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - auth
+  /api/v1/auth/reset_password:
+    post:
+      operationId: reset_password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusOk'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - auth
+  /api/v1/account/{account_id}:
+    get:
+      operationId: get_account
+      parameters:
+        - explode: false
+          in: path
+          name: account_id
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - account
+  /api/v1/channel/{channel_id}:
+    get:
+      operationId: subscribe_channel
+      parameters:
+        - explode: false
+          in: path
+          name: channel_id
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelMessage'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - channel
+    post:
+      operationId: publish_channel
+      parameters:
+        - explode: false
+          in: path
+          name: channel_id
+          required: true
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelMessage'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusOk'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - channel
+  /api/v1/channel/{channel_id}/socket:
+    get:
+      operationId: channel_cocket
+      parameters:
+        - explode: false
+          in: path
+          name: channel_id
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusOk'
+          description: OK
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+          description: デフォルトのエラーレスポンス
+      tags:
+        - channel
+components:
+  parameters:
+    AccountId:
+      explode: false
+      in: path
+      name: account_id
+      required: true
+      schema:
+        type: string
+      style: simple
+    ChannelId:
+      explode: false
+      in: path
+      name: channel_id
+      required: true
+      schema:
+        type: string
+      style: simple
+  responses:
+    ErrorResponse:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+      description: デフォルトのエラーレスポンス
+  schemas:
+    StatusOk:
+      example:
+        status: OK
+      properties:
+        status:
+          default: OK
+          type: string
+      required:
+        - status
+      type: object
+    StatusWithMessage:
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+      required:
+        - message
+        - status
+      type: object
+    ErrorMessage:
+      properties:
+        status:
+          type: integer
+        type:
+          type: string
+        message:
+          type: string
+      required:
+        - status
+        - type
+      type: object
+    StatusResponse:
+      example:
+        version: version
+        build_timestamp: build_timestamp
+        status: status
+      properties:
+        status:
+          type: string
+        version:
+          type: string
+        build_timestamp:
+          type: string
+      required:
+        - build_timestamp
+        - status
+        - version
+      type: object
+    SigninRequest:
+      example:
+        password: password
+        mail: mail
+        remember_me: true
+      properties:
+        mail:
+          type: string
+        password:
+          type: string
+        remember_me:
+          type: boolean
+      required:
+        - mail
+        - password
+      type: object
+    SignUpRequest:
+      example:
+        password: password
+        mail: mail
+      properties:
+        mail:
+          type: string
+        password:
+          type: string
+      required:
+        - mail
+        - password
+      type: object
+    SignUpFinishRequest:
+      example:
+        code: code
+      properties:
+        code:
+          type: string
+      required:
+        - code
+      type: object
+    ResetPasswordRequest:
+      example:
+        password: password
+        code: code
+      properties:
+        code:
+          type: string
+        password:
+          type: string
+      required:
+        - code
+        - password
+      type: object
+    ForgetPasswordRequest:
+      example:
+        mail: mail
+      properties:
+        mail:
+          type: string
+      required:
+        - mail
+      type: object
+    Account:
+      example:
+        name: name
+        id: id
+        display_name: display_name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        display_name:
+          type: string
+      required:
+        - display_name
+        - id
+        - name
+      type: object
+    ChannelMessage:
+      example:
+        payload: payload
+        topic: topic
+      properties:
+        topic:
+          type: string
+        payload:
+          type: string
+      required:
+        - payload
+        - topic
+      type: object

@@ -1,0 +1,17 @@
+[package]
+name = "kernel"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+async-trait = "0.1.67"
+serde = { version = "1.0.157", features = ["derive"] }
+anyhow = { version = "1.0.70", features = ["backtrace"] }
+derive-new = "0.5.9"
+chrono = { version = "0.4.24", features = ["serde"]}
+strum = { version = "0.24", features = ["derive"] }
+strum_macros = "0.24"
+
+[build-dependencies]
+built = { version = "0.6.0", features = ["git2", "chrono", "semver"] }
