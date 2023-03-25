@@ -27,7 +27,7 @@ mod handler;
 pub mod presenter;
 mod route;
 
-pub async fn start<M: ApiMods<P>, P: ServerPresenter>(config: ApiConfig, mods: M) -> Result<()> {
+pub async fn start<M: Mods<P>, P: ServerPresenter>(config: ApiConfig, mods: M) -> Result<()> {
     let app = define_route(mods);
     Server::bind(&config.bind_address)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
@@ -36,8 +36,7 @@ pub async fn start<M: ApiMods<P>, P: ServerPresenter>(config: ApiConfig, mods: M
 }
 
 trait_set! {
-    pub trait ApiUseCases =
-    Component
+    pub trait Mods<P: ServerPresenter> = Component
     + UseUseCase<StatusInput, StatusOutput>
     + UseUseCase<GetAccountInput, GetAccountOutput>
     + UseUseCase<GetAuthStatusInput, GetAuthStatusOutput>
@@ -51,9 +50,6 @@ trait_set! {
     + UseUseCase<SubscribeInput, SubscribeOutput>
     + UseUseCase<PubSubInput, PubSubOutput>
     + UseUseCase<GetSessionInput, GetSessionOutput>
-    ;
-    pub trait ApiMods<P: ServerPresenter> = Component
-    + ApiUseCases
     + UsePresenter<Presenter = P>
     ;
     pub trait PresentResponse<D> = Present<Result<D>, Output = Result<Response, ()>>;

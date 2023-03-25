@@ -24,8 +24,8 @@ pub(crate) async fn csrf_protection<B>(
             format!("invalid host: {host}"),
         ));
     }
-    let is_ws = get_header(headers, "sec-websocket-protocol")?.is_some();
-    let is_es = get_header(headers, "accept")? == Some("text/event-stream".to_string());
+    let is_websocket = get_header(headers, "sec-websocket-protocol")?.is_some();
+    let is_event_stream = get_header(headers, "accept")? == Some("text/event-stream".to_string());
     let x_from = get_header(headers, "x-from")?;
     let env_urls = get_var::<String>("CSRF_ALLOW_X_FROM")?;
     match x_from {
@@ -38,7 +38,7 @@ pub(crate) async fn csrf_protection<B>(
             }
             _ => (),
         },
-        _ if !is_ws && !is_es => {
+        _ if !is_websocket && !is_event_stream => {
             return Ok(response_with_code(
                 StatusCode::FORBIDDEN,
                 format!("invalid x-from: {x_from:?}"),

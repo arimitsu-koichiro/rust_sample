@@ -235,9 +235,8 @@ where
             .authentication_repository()
             .get_by_mail(ctx.clone(), input.mail.clone())
             .await?;
-        let auth = match auth {
-            Some(auth) => auth,
-            None => return Ok(ForgetPasswordOutput),
+        let Some(auth) = auth else {
+            return Ok(ForgetPasswordOutput)
         };
         let code = helper::uuid::new_v4().to_base62();
         let password_reset_code = PasswordResetCode {
@@ -286,25 +285,21 @@ where
     async fn handle(&self, input: ResetPasswordInput) -> Result<ResetPasswordOutput> {
         let tx = self.deps.context().await?;
         let tx = tx.begin().await?;
-        let password_reset_code = match self
+        let Some(password_reset_code) = self
             .deps
             .authentication_repository()
             .get_password_reset_code(tx.clone(), input.code.clone())
-            .await?
-        {
-            Some(c) => c,
-            None => bail!(unexpected!("invalid password reset code. code not found.")),
+            .await? else {
+            bail!(unexpected!("invalid password reset code. code not found."))
         };
-        let authentication = match self
+        let Some(authentication) =  self
             .deps
             .authentication_repository()
             .get_by_mail(tx.clone(), password_reset_code.mail.clone())
-            .await?
-        {
-            Some(auth) => auth,
-            None => bail!(unexpected!(
+            .await? else {
+            bail!(unexpected!(
                 "invalid password reset code. account not found"
-            )),
+            ))
         };
         let updated = UpdatePassword {
             account_id: authentication.account_id,

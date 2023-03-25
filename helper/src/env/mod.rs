@@ -21,18 +21,18 @@ where
     get_var(name).unwrap_or(d)
 }
 
-pub fn var_is_opt<T: FromStr + PartialEq>(name: &str, value: Option<T>) -> bool
+pub fn var_is_opt<T: FromStr + PartialEq>(name: &str, value: &Option<T>) -> bool
 where
     <T as FromStr>::Err: Debug,
 {
-    get_var_opt(name) == value
+    &get_var_opt(name) == value
 }
 
 pub fn var_is<T: FromStr + PartialEq>(name: &str, value: T) -> bool
 where
     <T as FromStr>::Err: Debug,
 {
-    var_is_opt(name, Some(value))
+    var_is_opt(name, &Some(value))
 }
 
 #[must_use]

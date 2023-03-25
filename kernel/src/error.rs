@@ -42,17 +42,11 @@ impl Error {
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::BadRequest(msg, detail) => {
-                write!(f, "{msg:?}, {detail:?}")
-            }
-            Error::Unauthorized(msg, detail) => {
-                write!(f, "{msg:?}, {detail:?}")
-            }
-            Error::Forbidden(msg, detail) => {
-                write!(f, "{msg:?}, {detail:?}")
-            }
-            Error::NotFound(msg, detail) => write!(f, "{msg:?}, {detail:?}"),
-            Error::Unexpected(msg, detail) => {
+            Error::BadRequest(msg, detail)
+            | Error::Unauthorized(msg, detail)
+            | Error::Forbidden(msg, detail)
+            | Error::NotFound(msg, detail)
+            | Error::Unexpected(msg, detail) => {
                 write!(f, "{msg:?}, {detail:?}")
             }
         }

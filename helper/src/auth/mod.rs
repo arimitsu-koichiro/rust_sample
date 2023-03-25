@@ -9,7 +9,7 @@ pub fn stretch(origin: &str, salt: &str, pepper: &str, count: i64) -> String {
     for _ in 0..count {
         let mut hash = sha2::Sha512::new();
         hash.update(output.as_bytes());
-        output = format!("{:x}", hash.finalize())
+        output = format!("{:x}", hash.finalize());
     }
     output
 }

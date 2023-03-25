@@ -33,7 +33,7 @@ impl Presenter for OpenAPIServerPresenter {}
 impl Present<Result<StatusOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
     async fn present(&self, data: Result<StatusOutput>, _: ()) -> Self::Output {
-        present_status_output(data)
+        Ok(present_status_output(data))
     }
 }
 #[async_trait]
@@ -41,7 +41,7 @@ impl Present<Result<GetAccountOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
 
     async fn present(&self, data: Result<GetAccountOutput>, _: ()) -> Self::Output {
-        present_get_account_output(data)
+        Ok(present_get_account_output(data))
     }
 }
 #[async_trait]
@@ -49,7 +49,7 @@ impl Present<Result<GetAuthStatusOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
 
     async fn present(&self, data: Result<GetAuthStatusOutput>, _: ()) -> Self::Output {
-        present_status_ok(data)
+        Ok(present_status_ok(data))
     }
 }
 #[async_trait]
@@ -57,7 +57,7 @@ impl Present<Result<SignUpOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
 
     async fn present(&self, data: Result<SignUpOutput>, _: ()) -> Self::Output {
-        present_status_ok(data)
+        Ok(present_status_ok(data))
     }
 }
 #[async_trait]
@@ -65,7 +65,7 @@ impl Present<Result<SignUpFinishOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
 
     async fn present(&self, data: Result<SignUpFinishOutput>, _: ()) -> Self::Output {
-        present_signup_finish_output(data)
+        Ok(present_signup_finish_output(data))
     }
 }
 #[async_trait]
@@ -73,7 +73,7 @@ impl Present<Result<SignInOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
 
     async fn present(&self, data: Result<SignInOutput>, _: ()) -> Self::Output {
-        present_signin_output(data)
+        Ok(present_signin_output(data))
     }
 }
 #[async_trait]
@@ -81,7 +81,7 @@ impl Present<Result<SignOutOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
 
     async fn present(&self, data: Result<SignOutOutput>, _: ()) -> Self::Output {
-        present_signout_output(data)
+        Ok(present_signout_output(data))
     }
 }
 #[async_trait]
@@ -89,7 +89,7 @@ impl Present<Result<ForgetPasswordOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
 
     async fn present(&self, data: Result<ForgetPasswordOutput>, _: ()) -> Self::Output {
-        present_forget_password_output(data)
+        Ok(present_forget_password_output(data))
     }
 }
 #[async_trait]
@@ -97,7 +97,7 @@ impl Present<Result<ResetPasswordOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
 
     async fn present(&self, data: Result<ResetPasswordOutput>, _: ()) -> Self::Output {
-        present_status_ok(data)
+        Ok(present_status_ok(data))
     }
 }
 #[async_trait]
@@ -105,7 +105,7 @@ impl Present<Result<PublishOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
 
     async fn present(&self, data: Result<PublishOutput>, _: ()) -> Self::Output {
-        present_status_ok(data)
+        Ok(present_status_ok(data))
     }
 }
 #[async_trait]
@@ -113,7 +113,7 @@ impl Present<Result<SubscribeOutput>> for OpenAPIServerPresenter {
     type Output = Result<Response, ()>;
 
     async fn present(&self, data: Result<SubscribeOutput>, _: ()) -> Self::Output {
-        present_subscribe_output(data)
+        Ok(present_subscribe_output(data))
     }
 }
 
@@ -138,34 +138,30 @@ impl Present<Result<PubSubOutput>, Sender<Vec<u8>>> for OpenAPIServerPresenter {
     }
 }
 
-fn present_status_output(data: Result<StatusOutput>) -> Result<Response, ()> {
+fn present_status_output(data: Result<StatusOutput>) -> Response {
     match data {
-        Ok(s) => Ok(ok_response_with_message(StatusResponse::new(
+        Ok(s) => ok_response_with_message(StatusResponse::new(
             status_reason(StatusCode::OK),
             s.version.unwrap_or_else(|| "-".to_string()),
             s.build_timestamp,
-        ))),
-        Err(e) => Ok(convert_server_error(e)),
+        )),
+        Err(e) => convert_server_error(e),
     }
 }
 
-fn present_get_account_output(data: Result<GetAccountOutput>) -> Result<Response, ()> {
+fn present_get_account_output(data: Result<GetAccountOutput>) -> Response {
     match data {
         Ok(output) => {
             let Some(account) = output.account else  {
-                return Ok(not_found(Codes::CommonNotFound, Some("account not found".to_string())));
+                return not_found(&Codes::CommonNotFound, Some("account not found".to_string()));
             };
-            Ok(ok_response_with_message(Account::new(
-                account.id,
-                account.name,
-                account.display_name,
-            )))
+            ok_response_with_message(Account::new(account.id, account.name, account.display_name))
         }
-        Err(e) => Ok(convert_server_error(e)),
+        Err(e) => convert_server_error(e),
     }
 }
 
-fn present_signin_output(data: Result<SignInOutput>) -> Result<Response, ()> {
+fn present_signin_output(data: Result<SignInOutput>) -> Response {
     match data {
         Ok(output) => {
             let SignInOutput {
@@ -177,34 +173,34 @@ fn present_signin_output(data: Result<SignInOutput>) -> Result<Response, ()> {
             } else {
                 None
             };
-            Ok(status_ok_response().with_cookie(set_session_cookie(session_id, max_age)))
+            status_ok_response().with_cookie(set_session_cookie(session_id, max_age))
         }
-        Err(e) => Ok(convert_server_error(e)),
+        Err(e) => convert_server_error(e),
     }
 }
 
-fn present_signup_finish_output(data: Result<SignUpFinishOutput>) -> Result<Response, ()> {
+fn present_signup_finish_output(data: Result<SignUpFinishOutput>) -> Response {
     match data {
         Ok(output) => {
             let SignUpFinishOutput { session_id } = output;
-            Ok(status_ok_response().with_cookie(set_session_cookie(session_id, None)))
+            status_ok_response().with_cookie(set_session_cookie(session_id, None))
         }
-        Err(e) => Ok(convert_server_error(e)),
+        Err(e) => convert_server_error(e),
     }
 }
-fn present_signout_output(data: Result<SignOutOutput>) -> Result<Response, ()> {
+fn present_signout_output(data: Result<SignOutOutput>) -> Response {
     match data {
-        Ok(_) => Ok(status_ok_response().with_cookie(delete_session_cookie())),
-        Err(e) => Ok(convert_server_error(e)),
+        Ok(_) => status_ok_response().with_cookie(delete_session_cookie()),
+        Err(e) => convert_server_error(e),
     }
 }
-fn present_forget_password_output(data: Result<ForgetPasswordOutput>) -> Result<Response, ()> {
+fn present_forget_password_output(data: Result<ForgetPasswordOutput>) -> Response {
     match data {
-        Ok(_) => Ok(status_ok_response().with_cookie(delete_session_cookie())),
-        Err(e) => Ok(convert_server_error(e)),
+        Ok(_) => status_ok_response().with_cookie(delete_session_cookie()),
+        Err(e) => convert_server_error(e),
     }
 }
-fn present_subscribe_output(data: Result<SubscribeOutput>) -> Result<Response, ()> {
+fn present_subscribe_output(data: Result<SubscribeOutput>) -> Response {
     match data {
         Ok(output) => {
             let (sender, rx) = tokio::sync::mpsc::channel::<Result<Event, Infallible>>(1000);
@@ -221,22 +217,22 @@ fn present_subscribe_output(data: Result<SubscribeOutput>) -> Result<Response, (
                     }
                 }
             });
-            Ok(Sse::new(tokio_stream::wrappers::ReceiverStream::new(rx))
+            Sse::new(tokio_stream::wrappers::ReceiverStream::new(rx))
                 .keep_alive(
                     axum::response::sse::KeepAlive::new()
                         .interval(Duration::from_secs(1))
                         .text("keep-alive-text"),
                 )
-                .into_response())
+                .into_response()
         }
-        Err(e) => Ok(convert_server_error(e)),
+        Err(e) => convert_server_error(e),
     }
 }
 
-fn present_status_ok<A>(data: Result<A>) -> Result<Response, ()> {
+fn present_status_ok<A>(data: Result<A>) -> Response {
     match data {
-        Ok(_) => Ok(status_ok_response()),
-        Err(e) => Ok(convert_server_error(e)),
+        Ok(_) => status_ok_response(),
+        Err(e) => convert_server_error(e),
     }
 }
 
@@ -245,51 +241,51 @@ fn convert_server_error(err: anyhow::Error) -> Response {
         match usecase_err {
             kernel::error::Error::BadRequest(type_code, message) => {
                 log::warn!("{}", err);
-                bad_request(type_code.clone(), message.clone())
+                bad_request(type_code, message.clone())
             }
             kernel::error::Error::Unauthorized(type_code, message) => {
                 log::warn!("{}", err);
-                unauthorized(type_code.clone(), message.clone())
+                unauthorized(type_code, message.clone())
             }
             kernel::error::Error::Forbidden(type_code, message) => {
                 log::warn!("{}", err);
-                forbidden(type_code.clone(), message.clone())
+                forbidden(type_code, message.clone())
             }
             kernel::error::Error::NotFound(type_code, message) => {
                 log::warn!("{}", err);
-                not_found(type_code.clone(), message.clone())
+                not_found(type_code, message.clone())
             }
             kernel::error::Error::Unexpected(type_code, message) => {
                 log::error!("{:?}", err);
-                internal_server_error(type_code.clone(), message.clone())
+                internal_server_error(type_code, message.clone())
             }
         }
     } else {
         log::error!("{:?}", err);
         internal_server_error(
-            Codes::CommonUnexpected,
+            &Codes::CommonUnexpected,
             Some(status_reason(StatusCode::INTERNAL_SERVER_ERROR)),
         )
     }
 }
 
-fn bad_request(type_code: Codes, message: Option<String>) -> Response {
+fn bad_request(type_code: &Codes, message: Option<String>) -> Response {
     server_error_message(StatusCode::BAD_REQUEST, type_code, message)
 }
-fn unauthorized(type_code: Codes, message: Option<String>) -> Response {
+fn unauthorized(type_code: &Codes, message: Option<String>) -> Response {
     server_error_message(StatusCode::UNAUTHORIZED, type_code, message)
 }
-fn forbidden(type_code: Codes, message: Option<String>) -> Response {
+fn forbidden(type_code: &Codes, message: Option<String>) -> Response {
     server_error_message(StatusCode::FORBIDDEN, type_code, message)
 }
-fn not_found(type_code: Codes, message: Option<String>) -> Response {
+fn not_found(type_code: &Codes, message: Option<String>) -> Response {
     server_error_message(StatusCode::NOT_FOUND, type_code, message)
 }
-fn internal_server_error(type_code: Codes, message: Option<String>) -> Response {
+fn internal_server_error(type_code: &Codes, message: Option<String>) -> Response {
     server_error_message(StatusCode::INTERNAL_SERVER_ERROR, type_code, message)
 }
 
-fn server_error_message(code: StatusCode, type_code: Codes, message: Option<String>) -> Response {
+fn server_error_message(code: StatusCode, type_code: &Codes, message: Option<String>) -> Response {
     server_response_message(
         code,
         ErrorMessage {
@@ -329,7 +325,7 @@ fn set_session_cookie(
 ) -> Cookie<'static> {
     let mut builder = CookieBuilder::new(constants::SESSION_COOKIE_ID, session_id.into());
     if let Some(max_age) = max_age {
-        builder = builder.max_age(max_age)
+        builder = builder.max_age(max_age);
     }
     builder
         .secure(true)

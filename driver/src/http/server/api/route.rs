@@ -1,5 +1,5 @@
 use super::handler::{account, auth, channel, status};
-use crate::http::server::api::{ApiMods, ServerPresenter};
+use crate::http::server::api::{Mods, ServerPresenter};
 use crate::http::server::middleware::csrf::csrf_protection;
 use crate::http::server::middleware::request_id::MakeRequestBase62Uuid;
 use crate::http::server::middleware::session::RequireSession;
@@ -9,7 +9,7 @@ use axum::routing::{get, post, Router};
 use tower_http::request_id::{PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
 
-pub(crate) fn define_route<M: ApiMods<P>, P: ServerPresenter>(mods: M) -> Router {
+pub(crate) fn define_route<M: Mods<P>, P: ServerPresenter>(mods: M) -> Router {
     let private = || from_extractor_with_state::<RequireSession, M>(mods.clone());
     Router::new()
         .nest(

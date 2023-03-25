@@ -43,22 +43,18 @@ pub async fn signin_account<C: Component>(
     mail: String,
     password: String,
 ) -> Result<Account> {
-    let authentication = match auth_repo.get_by_mail(db.clone(), mail.to_string()).await? {
-        Some(auth) => auth,
-        None => {
-            let _ = stretch_password(&password, "dummy")?; // dummy stretching.
-            bail!(forbidden!("inputs: {}/{}", mail, password)
+    let Some(authentication) = auth_repo.get_by_mail(db.clone(), mail.to_string()).await? else {
+        let _ = stretch_password(&password, "dummy")?; // dummy stretching.
+        bail!(forbidden!("inputs: {}/{}", mail, password)
                 .with_codes(Codes::InvalidEmailOrPassword))
-        }
     };
 
     let hash = stretch_password(&password, &authentication.salt)?;
     if hash != authentication.password {
         bail!(forbidden!("inputs: {}/{}", mail, password).with_codes(Codes::InvalidEmailOrPassword))
     }
-    let account = match repo.get(db.clone(), authentication.account_id).await? {
-        Some(account) => account,
-        None => bail!(unexpected!("Account NotFound")),
+    let Some(account) = repo.get(db.clone(), authentication.account_id).await? else {
+        bail!(unexpected!("Account NotFound"))
     };
     Ok(account)
 }

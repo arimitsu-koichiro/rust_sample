@@ -1,4 +1,4 @@
-use crate::http::server::api::{ApiMods, ServerPresenter};
+use crate::http::server::api::{Mods, ServerPresenter};
 
 use crate::{dispatch, dispatch_with};
 
@@ -17,44 +17,44 @@ use std::time::Duration;
 use tokio::sync::mpsc::channel;
 use tokio::sync::Mutex;
 
-pub(crate) async fn channel_socket<M: ApiMods<P>, P: ServerPresenter>(
-    State(api): State<M>,
+pub(crate) async fn channel_socket<M: Mods<P>, P: ServerPresenter>(
+    State(mods): State<M>,
     Path(channel_id): Path<String>,
     ws: WebSocketUpgrade,
 ) -> Result<Response, ()> {
     Ok(ws
         .protocols(["x-protocol"])
-        .on_upgrade(move |socket| handle_socket(api, channel_id, socket)))
+        .on_upgrade(move |socket| async { handle_socket(mods, channel_id, socket).await }))
 }
 
-pub(crate) async fn subscribe_channel<M: ApiMods<P>, P: ServerPresenter>(
-    State(api): State<M>,
+pub(crate) async fn subscribe_channel<M: Mods<P>, P: ServerPresenter>(
+    State(mods): State<M>,
     Path(channel_id): Path<String>,
 ) -> Result<Response, ()> {
-    dispatch(SubscribeInput::new(channel_id), api).await
+    dispatch(SubscribeInput::new(channel_id), mods).await
 }
 
-pub(crate) async fn publish_channel<M: ApiMods<P>, P: ServerPresenter>(
-    State(api): State<M>,
+pub(crate) async fn publish_channel<M: Mods<P>, P: ServerPresenter>(
+    State(mods): State<M>,
     Path(channel_id): Path<String>,
     message: String,
 ) -> Result<Response, ()> {
     let input = PublishInput::new(channel_id, message.as_bytes().to_vec());
-    dispatch(input, api).await
+    dispatch(input, mods).await
 }
 
-async fn handle_socket<M: ApiMods<P>, P: ServerPresenter>(
-    api: M,
+async fn handle_socket<M: Mods<P>, P: ServerPresenter>(
+    mods: M,
     channel_id: String,
     socket: WebSocket,
 ) {
     let (outbound, mut inbound) = socket.split();
     let outbound = Arc::new(Mutex::new(outbound));
-    let _outbound = outbound.clone();
     let (exchange_sender, receiver) = channel::<Vec<u8>>(1000);
     let (sender, exchange_receiver) = channel::<Vec<u8>>(1000);
     let ping_message = uuid::new_v4().to_base62().as_bytes().to_vec();
-    let _ping_message = ping_message.clone();
+    let cloned_outbound = outbound.clone();
+    let cloned_ping_message = ping_message.clone();
     tokio::spawn(async move {
         while let Some(msg) = inbound.next().await {
             let msg = match msg {
@@ -76,15 +76,15 @@ async fn handle_socket<M: ApiMods<P>, P: ServerPresenter>(
                     }
                 }
                 Message::Ping(x) => {
-                    if let Err(err) = _outbound.lock().await.send(Message::Pong(x)).await {
+                    if let Err(err) = cloned_outbound.lock().await.send(Message::Pong(x)).await {
                         log::debug!("send pong error: {}", err);
                     }
                 }
                 Message::Pong(x) => {
-                    if x != _ping_message {
+                    if x != cloned_ping_message {
                         log::error!(
                             "invalid pong message. send {}, receive: {}",
-                            String::from_utf8_lossy(_ping_message.as_slice()),
+                            String::from_utf8_lossy(cloned_ping_message.as_slice()),
                             String::from_utf8_lossy(x.as_slice())
                         );
                         break;
@@ -96,11 +96,16 @@ async fn handle_socket<M: ApiMods<P>, P: ServerPresenter>(
             }
         }
     });
-    let _outbound = outbound.clone();
+    let cloned_outbound = outbound.clone();
     tokio::spawn(async move {
         let mut stream = tokio_stream::wrappers::ReceiverStream::new(exchange_receiver);
         while let Some(msg) = stream.next().await {
-            match _outbound.lock().await.send(Message::Binary(msg)).await {
+            match cloned_outbound
+                .lock()
+                .await
+                .send(Message::Binary(msg))
+                .await
+            {
                 Ok(_) => (),
                 Err(e) => {
                     log::debug!("send outbound message error: {}", e);
@@ -110,12 +115,12 @@ async fn handle_socket<M: ApiMods<P>, P: ServerPresenter>(
         }
     });
 
-    let _outbound = outbound.clone();
+    let cloned_outbound = outbound.clone();
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(Duration::from_millis(10000));
         loop {
             interval.tick().await;
-            match _outbound
+            match cloned_outbound
                 .lock()
                 .await
                 .send(Message::Ping(ping_message.clone()))
@@ -130,5 +135,5 @@ async fn handle_socket<M: ApiMods<P>, P: ServerPresenter>(
         }
     });
     let input = PubSubInput::new(channel_id, receiver);
-    dispatch_with(input, sender, api).await
+    dispatch_with(input, sender, mods).await;
 }
