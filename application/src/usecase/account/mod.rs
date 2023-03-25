@@ -60,10 +60,8 @@ pub struct GetAccountOutput {
 
 #[cfg(test)]
 mod tests {
-    use crate::interface::repository::account::{
-        AccountRepository, NewAccount, UseAccountRepository,
-    };
-    use crate::interface::repository::session::{SessionRepository, UseSessionRepository};
+    use crate::interface::repository::account::{MockAccountRepository, UseAccountRepository};
+    use crate::interface::repository::session::{MockSessionRepository, UseSessionRepository};
     use std::sync::Arc;
 
     use crate::interface::UseContext;
@@ -71,14 +69,14 @@ mod tests {
     use crate::usecase::UseCase;
     use async_trait::async_trait;
     use chrono::DateTime;
-    use kernel::entity::{Account, ProvisionalSession, Session};
+    use kernel::entity::Account;
     use kernel::Result;
-    use mockall::{mock, predicate};
+    use mockall::predicate;
 
     #[derive(Clone)]
     struct TestMods {
-        mock_account_repo: Arc<MockTestAccountRepository>,
-        mock_session_repo: Arc<MockTestSessionRepository>,
+        mock_account_repo: Arc<MockAccountRepository>,
+        mock_session_repo: Arc<MockSessionRepository>,
     }
 
     #[async_trait]
@@ -89,51 +87,16 @@ mod tests {
             Ok(())
         }
     }
-    mock! {
-        TestAccountRepository {
-        }
-        impl Clone for TestAccountRepository {
-            fn clone(&self) -> Self;
-        }
-        #[async_trait]
-        impl AccountRepository<()> for TestAccountRepository {
-            async fn get(&self, ctx: (), id: String) -> Result<Option<Account>>;
-            async fn create(&self, ctx: (), account: NewAccount) -> Result<Account>;
-        }
-    }
-    mock! {
-        TestSessionRepository {
-        }
-        impl Clone for TestSessionRepository {
-            fn clone(&self) -> Self;
-        }
-        #[async_trait]
-        impl SessionRepository<()> for TestSessionRepository {
-            async fn set_provisional_session(
-                &self,
-                ctx: (),
-                session: ProvisionalSession,
-            ) -> Result<()>;
-            async fn get_provisional_session(
-                &self,
-                ctx: (),
-                id: String,
-            ) -> Result<Option<ProvisionalSession>>;
-            async fn set(&self, ctx: (), session: Session) -> Result<()>;
-            async fn get(&self, ctx: (), id: String) -> Result<Option<Session>>;
-            async fn delete(&self, ctx: (), id: String) -> Result<()>;
-        }
-    }
 
     impl UseAccountRepository<()> for TestMods {
-        type AccountRepository = Arc<MockTestAccountRepository>;
+        type AccountRepository = Arc<MockAccountRepository>;
 
         fn account_repository(&self) -> Self::AccountRepository {
             self.mock_account_repo.clone()
         }
     }
     impl UseSessionRepository<()> for TestMods {
-        type SessionRepository = Arc<MockTestSessionRepository>;
+        type SessionRepository = Arc<MockSessionRepository>;
 
         fn session_repository(&self) -> Self::SessionRepository {
             self.mock_session_repo.clone()
@@ -142,7 +105,7 @@ mod tests {
 
     #[tokio::test]
     async fn get_account() {
-        let mut mock_account_repo = MockTestAccountRepository::default();
+        let mut mock_account_repo = MockAccountRepository::default();
         mock_account_repo
             .expect_get()
             .with(predicate::eq(()), predicate::eq("id".to_string()))
@@ -156,7 +119,7 @@ mod tests {
             });
         let mods = TestMods {
             mock_account_repo: Arc::new(mock_account_repo),
-            mock_session_repo: Arc::new(MockTestSessionRepository::default()),
+            mock_session_repo: Arc::new(MockSessionRepository::default()),
         };
         let interactor = GetAccountUseCase::new(mods);
         let output = interactor
