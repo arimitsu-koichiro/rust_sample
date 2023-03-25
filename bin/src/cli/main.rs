@@ -1,6 +1,6 @@
 use application::interface::gateway::pubsub::UsePubSubGateway;
 use application::interface::UseContext;
-use application::usecase::channel::{PubSubInput, PubSubOutput, PubSubUseCase};
+use application::usecase::channel::{SubscribeInput, SubscribeOutput, SubscribeUseCase};
 use application::usecase::UseUseCase;
 use async_trait::async_trait;
 use derive_new::new;
@@ -17,17 +17,15 @@ use helper::env::get_var;
 use kernel::Result;
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<()> {
     dotenv::dotenv().ok();
     if let Ok(ssm_envs_path) = get_var("SSM_ENVS_PATH") {
-        load_from_ssm(ssm_envs_path).await.unwrap();
+        load_from_ssm(ssm_envs_path).await?;
     }
     log::init();
     let config = Config::new();
-    let redis = Redis::new(config.redis_config).await.unwrap();
-    driver::cli::listen_pubsub(Modules::new(redis))
-        .await
-        .unwrap();
+    let redis = Redis::new(config.redis_config).await?;
+    driver::cli::listen_pubsub(Modules::new(redis)).await?;
     Ok(())
 }
 
@@ -55,11 +53,11 @@ impl UseContext for Modules {
     }
 }
 
-impl UseUseCase<PubSubInput, PubSubOutput> for Modules {
-    type UseCase = PubSubUseCase<Context, Modules>;
+impl UseUseCase<SubscribeInput, SubscribeOutput> for Modules {
+    type UseCase = SubscribeUseCase<Context, Modules>;
 
     fn usecase(&self) -> Self::UseCase {
-        PubSubUseCase::new(self.clone())
+        SubscribeUseCase::new(self.clone())
     }
 }
 

@@ -1,13 +1,10 @@
 use crate::dispatch;
 use crate::{Present, UsePresenter};
 use application::interface::Component;
-use application::usecase::channel::{PubSubInput, PubSubOutput};
-use clap::Parser;
-
-use kernel::Result;
-
+use application::usecase::channel::{SubscribeInput, SubscribeOutput};
 use application::usecase::UseUseCase;
-use tokio::sync::mpsc::channel;
+use clap::Parser;
+use kernel::Result;
 use trait_set::trait_set;
 
 pub mod presenter;
@@ -20,17 +17,16 @@ struct Args {
 }
 pub async fn listen_pubsub<M: Mods<P>, P: CliPresenter>(mods: M) -> Result<()> {
     let args = Args::parse();
-    let (_exchange_sender, receiver) = channel::<Vec<u8>>(1000);
-    let _ = dispatch(PubSubInput::new(args.channel, receiver), mods).await;
+    let _ = dispatch(SubscribeInput::new(args.channel), mods).await;
     Ok(())
 }
 
 trait_set! {
     pub trait Mods<P: CliPresenter> = Component
-    + UseUseCase<PubSubInput, PubSubOutput>
+    + UseUseCase<SubscribeInput, SubscribeOutput>
     + UsePresenter<Presenter = P>
     ;
     pub trait CliPresenter = Component
-    + Present<Result<PubSubOutput>>
+    + Present<Result<SubscribeOutput>>
     ;
 }

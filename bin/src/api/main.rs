@@ -3,23 +3,21 @@ use driver::aws::ssm::load_from_ssm;
 use driver::mysql::DB;
 use driver::redis::Redis;
 use helper::env::get_var;
-
+use kernel::Result;
 mod config;
 mod modules;
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> Result<()> {
     dotenv::dotenv().ok();
     if let Ok(ssm_envs_path) = get_var("SSM_ENVS_PATH") {
-        load_from_ssm(ssm_envs_path).await.unwrap();
+        load_from_ssm(ssm_envs_path).await?;
     }
     log::init();
     let config = config::Config::new();
-    let db = DB::new(config.mysql_config).await.unwrap();
-    let redis = Redis::new(config.redis_config).await.unwrap();
-    driver::http::server::api::start(config.api_config, Modules::new(db, redis))
-        .await
-        .unwrap();
+    let db = DB::new(config.mysql_config).await?;
+    let redis = Redis::new(config.redis_config).await?;
+    driver::http::server::api::start(config.api_config, Modules::new(db, redis)).await?;
     Ok(())
 }
 
