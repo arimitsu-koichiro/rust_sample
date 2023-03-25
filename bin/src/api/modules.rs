@@ -6,6 +6,12 @@ use application::interface::repository::comment::UseCommentRepository;
 use application::interface::repository::session::UseSessionRepository;
 use application::interface::repository::Transaction;
 use application::interface::UseContext;
+use application::usecase::account::*;
+use application::usecase::auth::*;
+use application::usecase::channel::*;
+use application::usecase::session::*;
+use application::usecase::status::*;
+use application::usecase::UseUseCase;
 use async_trait::async_trait;
 use driver::adapter::gateway::mail::{SesContext, SesMailGateway};
 use driver::adapter::gateway::pubsub::PubSubGatewayImpl;
@@ -152,5 +158,84 @@ impl UsePresenter for Modules {
 
     fn presenter(&self) -> Self::Presenter {
         OpenAPIServerPresenter::default()
+    }
+}
+
+impl UseUseCase<StatusInput, StatusOutput> for Modules {
+    type UseCase = StatusUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        StatusUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<GetAccountInput, GetAccountOutput> for Modules {
+    type UseCase = GetAccountUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        GetAccountUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<GetAuthStatusInput, GetAuthStatusOutput> for Modules {
+    type UseCase = GetAuthStatusUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        GetAuthStatusUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<SignUpInput, SignUpOutput> for Modules {
+    type UseCase = SignUpUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        SignUpUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<SignUpFinishInput, SignUpFinishOutput> for Modules {
+    type UseCase = SignUpFinishUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        SignUpFinishUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<SignInInput, SignInOutput> for Modules {
+    type UseCase = SignInUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        SignInUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<SignOutInput, SignOutOutput> for Modules {
+    type UseCase = SignOutUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        SignOutUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<ForgetPasswordInput, ForgetPasswordOutput> for Modules {
+    type UseCase = ForgetPasswordUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        ForgetPasswordUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<ResetPasswordInput, ResetPasswordOutput> for Modules {
+    type UseCase = ResetPasswordUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        ResetPasswordUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<PublishInput, PublishOutput> for Modules {
+    type UseCase = PublishUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        PublishUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<SubscribeInput, SubscribeOutput> for Modules {
+    type UseCase = SubscribeUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        SubscribeUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<PubSubInput, PubSubOutput> for Modules {
+    type UseCase = PubSubUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        PubSubUseCase::new(self.clone())
+    }
+}
+impl UseUseCase<GetSessionInput, GetSessionOutput> for Modules {
+    type UseCase = GetSessionUseCase<Context, Modules>;
+    fn usecase(&self) -> Self::UseCase {
+        GetSessionUseCase::new(self.clone())
     }
 }

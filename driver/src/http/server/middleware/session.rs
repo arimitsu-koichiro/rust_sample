@@ -1,7 +1,7 @@
 use crate::http::server::response::constants;
-use application::interface::repository::session::{SessionRepository, UseSessionRepository};
-use application::interface::Component;
-use application::interface::UseContext;
+
+use application::usecase::session::{GetSessionInput, GetSessionOutput};
+use application::usecase::{UseCase, UseUseCase};
 use async_trait::async_trait;
 use axum::extract::FromRequestParts;
 use axum::http::header::COOKIE;
@@ -14,12 +14,10 @@ pub struct ExtractSession(pub Option<Session>);
 pub struct RequireSession(pub Session);
 
 #[async_trait]
-impl<S, C> FromRequestParts<S> for ExtractSession
+impl<S> FromRequestParts<S> for ExtractSession
 where
-    C: Component,
     S: Send + Sync,
-    S: UseContext<Context = C>,
-    S: UseSessionRepository<C>,
+    S: UseUseCase<GetSessionInput, GetSessionOutput>,
 {
     type Rejection = (StatusCode, &'static str);
 
@@ -35,11 +33,11 @@ where
                 continue;
             }
             return match state
-                .session_repository()
-                .get(state.context().await.unwrap(), cookie.value().to_string())
+                .usecase()
+                .handle(GetSessionInput::new(cookie.value().to_string()))
                 .await
             {
-                Ok(session) => Ok(ExtractSession(session)),
+                Ok(session) => Ok(ExtractSession(session.session)),
                 _ => Ok(ExtractSession(None)),
             };
         }
@@ -48,12 +46,10 @@ where
 }
 
 #[async_trait]
-impl<S, C> FromRequestParts<S> for RequireSession
+impl<S> FromRequestParts<S> for RequireSession
 where
-    C: Component,
     S: Send + Sync,
-    S: UseContext<Context = C>,
-    S: UseSessionRepository<C>,
+    S: UseUseCase<GetSessionInput, GetSessionOutput>,
 {
     type Rejection = (StatusCode, &'static str);
 
@@ -68,19 +64,14 @@ where
             if cookie.name() != constants::SESSION_COOKIE_ID {
                 continue;
             }
-            if let Ok(Some(session)) = state
-                .session_repository()
-                .get(state.context().await.unwrap(), cookie.value().to_string())
-                .await
-            {
-                return Ok(RequireSession(session));
-            }
             return match state
-                .session_repository()
-                .get(state.context().await.unwrap(), cookie.value().to_string())
+                .usecase()
+                .handle(GetSessionInput::new(cookie.value().to_string()))
                 .await
             {
-                Ok(Some(session)) => Ok(RequireSession(session)),
+                Ok(GetSessionOutput {
+                    session: Some(session),
+                }) => Ok(RequireSession(session)),
                 _ => Err((StatusCode::BAD_REQUEST, "invalid session")),
             };
         }

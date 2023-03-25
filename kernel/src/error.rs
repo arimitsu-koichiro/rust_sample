@@ -75,8 +75,6 @@ pub enum Codes {
     #[strum(to_string = "common/unexpected")]
     CommonUnexpected,
     // special error
-    #[strum(to_string = "auth/invalid_session")]
-    InvalidSession,
     #[strum(to_string = "auth/invalid_email_or_password")]
     InvalidEmailOrPassword,
 }

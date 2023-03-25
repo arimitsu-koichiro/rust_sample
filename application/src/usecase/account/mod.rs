@@ -90,7 +90,7 @@ mod tests {
         }
     }
     mock! {
-        pub TestAccountRepository {
+        TestAccountRepository {
         }
         impl Clone for TestAccountRepository {
             fn clone(&self) -> Self;
@@ -102,7 +102,7 @@ mod tests {
         }
     }
     mock! {
-        pub TestSessionRepository {
+        TestSessionRepository {
         }
         impl Clone for TestSessionRepository {
             fn clone(&self) -> Self;

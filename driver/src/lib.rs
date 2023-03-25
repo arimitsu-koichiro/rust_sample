@@ -1,4 +1,4 @@
-use application::usecase::UseCase;
+use application::usecase::{UseCase, UseUseCase};
 use async_trait::async_trait;
 use kernel::Result;
 
@@ -23,21 +23,30 @@ pub trait UsePresenter {
     fn presenter(&self) -> Self::Presenter;
 }
 
-pub(crate) async fn dispatch<U: UseCase<I, O>, I, O, P: Present<Result<O>>>(
-    interactor: U,
+pub(crate) async fn dispatch<
+    M: UseUseCase<I, O> + UsePresenter<Presenter = P>,
+    I,
+    O,
+    P: Present<Result<O>>,
+>(
     input: I,
-    presenter: P,
+    mods: M,
 ) -> P::Output {
-    dispatch_with(interactor, input, presenter, ()).await
+    dispatch_with(input, (), mods).await
 }
 
-pub(crate) async fn dispatch_with<U: UseCase<I, O>, I, O, P: Present<Result<O>, A>, A>(
-    interactor: U,
+pub(crate) async fn dispatch_with<
+    M: UseUseCase<I, O> + UsePresenter<Presenter = P>,
+    I,
+    O,
+    P: Present<Result<O>, A>,
+    A,
+>(
     input: I,
-    presenter: P,
     attachment: A,
+    mods: M,
 ) -> P::Output {
-    presenter
-        .present(interactor.handle(input).await, attachment)
+    mods.presenter()
+        .present(mods.usecase().handle(input).await, attachment)
         .await
 }

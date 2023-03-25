@@ -2,21 +2,19 @@ use crate::http::server::api::config::ApiConfig;
 use crate::http::server::api::route::define_route;
 use crate::{Present, UsePresenter};
 use anyhow::Context as _;
-use application::interface::gateway::mail::UseMailGateway;
-use application::interface::gateway::pubsub::UsePubSubGateway;
-use application::interface::repository::account::UseAccountRepository;
-use application::interface::repository::authentication::UseAuthenticationRepository;
-use application::interface::repository::comment::UseCommentRepository;
-use application::interface::repository::session::UseSessionRepository;
-use application::interface::repository::Transaction;
-use application::interface::{Component, UseContext};
-use application::usecase::account::GetAccountOutput;
+use application::interface::Component;
+use application::usecase::account::{GetAccountInput, GetAccountOutput};
 use application::usecase::auth::{
-    ForgetPasswordOutput, GetAuthStatusOutput, ResetPasswordOutput, SignInOutput, SignOutOutput,
-    SignUpFinishOutput, SignUpOutput,
+    ForgetPasswordInput, ForgetPasswordOutput, GetAuthStatusInput, GetAuthStatusOutput,
+    ResetPasswordInput, ResetPasswordOutput, SignInInput, SignInOutput, SignOutInput,
+    SignOutOutput, SignUpFinishInput, SignUpFinishOutput, SignUpInput, SignUpOutput,
 };
-use application::usecase::channel::{PubSubOutput, PublishOutput, SubscribeOutput};
-use application::usecase::status::StatusOutput;
+use application::usecase::channel::{
+    PubSubInput, PubSubOutput, PublishInput, PublishOutput, SubscribeInput, SubscribeOutput,
+};
+use application::usecase::session::{GetSessionInput, GetSessionOutput};
+use application::usecase::status::{StatusInput, StatusOutput};
+use application::usecase::UseUseCase;
 use axum::response::Response;
 use axum::Server;
 use kernel::{unexpected, Result};
@@ -29,10 +27,7 @@ mod handler;
 pub mod presenter;
 mod route;
 
-pub async fn start<C: Transaction, M: ApiMods<C, P>, P: ServerPresenter>(
-    config: ApiConfig,
-    mods: M,
-) -> Result<()> {
+pub async fn start<M: ApiMods<P>, P: ServerPresenter>(config: ApiConfig, mods: M) -> Result<()> {
     let app = define_route(mods);
     Server::bind(&config.bind_address)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
@@ -41,15 +36,25 @@ pub async fn start<C: Transaction, M: ApiMods<C, P>, P: ServerPresenter>(
 }
 
 trait_set! {
-    pub trait ApiMods<C: Component, P: ServerPresenter> = Component
+    pub trait ApiUseCases =
+    Component
+    + UseUseCase<StatusInput, StatusOutput>
+    + UseUseCase<GetAccountInput, GetAccountOutput>
+    + UseUseCase<GetAuthStatusInput, GetAuthStatusOutput>
+    + UseUseCase<SignUpInput, SignUpOutput>
+    + UseUseCase<SignUpFinishInput, SignUpFinishOutput>
+    + UseUseCase<SignInInput, SignInOutput>
+    + UseUseCase<SignOutInput, SignOutOutput>
+    + UseUseCase<ForgetPasswordInput, ForgetPasswordOutput>
+    + UseUseCase<ResetPasswordInput, ResetPasswordOutput>
+    + UseUseCase<PublishInput, PublishOutput>
+    + UseUseCase<SubscribeInput, SubscribeOutput>
+    + UseUseCase<PubSubInput, PubSubOutput>
+    + UseUseCase<GetSessionInput, GetSessionOutput>
+    ;
+    pub trait ApiMods<P: ServerPresenter> = Component
+    + ApiUseCases
     + UsePresenter<Presenter = P>
-    + UseContext<Context = C>
-    + UseAccountRepository<C>
-    + UseSessionRepository<C>
-    + UseAuthenticationRepository<C>
-    + UseCommentRepository<C>
-    + UseMailGateway<C>
-    + UsePubSubGateway<C>
     ;
     pub trait PresentResponse<D> = Present<Result<D>, Output = Result<Response, ()>>;
     pub trait ServerPresenter = Component

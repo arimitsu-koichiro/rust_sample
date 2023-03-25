@@ -1,5 +1,7 @@
 use application::interface::gateway::pubsub::UsePubSubGateway;
 use application::interface::UseContext;
+use application::usecase::channel::{PubSubInput, PubSubOutput, PubSubUseCase};
+use application::usecase::UseUseCase;
 use async_trait::async_trait;
 use derive_new::new;
 use driver::adapter::gateway::pubsub::PubSubGatewayImpl;
@@ -50,6 +52,14 @@ impl UseContext for Modules {
         Ok(Context {
             redis: self.redis.clone(),
         })
+    }
+}
+
+impl UseUseCase<PubSubInput, PubSubOutput> for Modules {
+    type UseCase = PubSubUseCase<Context, Modules>;
+
+    fn usecase(&self) -> Self::UseCase {
+        PubSubUseCase::new(self.clone())
     }
 }
 

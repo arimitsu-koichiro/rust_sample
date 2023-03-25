@@ -1,10 +1,8 @@
 use crate::http::server::api::{ApiMods, ServerPresenter};
 
 use crate::{dispatch, dispatch_with};
-use application::interface::Component;
-use application::usecase::channel::{
-    PubSubInput, PubSubUseCase, PublishInput, PublishUseCase, SubscribeInput, SubscribeUseCase,
-};
+
+use application::usecase::channel::{PubSubInput, PublishInput, SubscribeInput};
 
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{Path, State, WebSocketUpgrade};
@@ -19,7 +17,7 @@ use std::time::Duration;
 use tokio::sync::mpsc::channel;
 use tokio::sync::Mutex;
 
-pub(crate) async fn channel_socket<M: ApiMods<C, P>, C: Component, P: ServerPresenter>(
+pub(crate) async fn channel_socket<M: ApiMods<P>, P: ServerPresenter>(
     State(api): State<M>,
     Path(channel_id): Path<String>,
     ws: WebSocketUpgrade,
@@ -29,32 +27,23 @@ pub(crate) async fn channel_socket<M: ApiMods<C, P>, C: Component, P: ServerPres
         .on_upgrade(move |socket| handle_socket(api, channel_id, socket)))
 }
 
-pub(crate) async fn subscribe_channel<M: ApiMods<C, P>, C: Component, P: ServerPresenter>(
+pub(crate) async fn subscribe_channel<M: ApiMods<P>, P: ServerPresenter>(
     State(api): State<M>,
     Path(channel_id): Path<String>,
 ) -> Result<Response, ()> {
-    dispatch(
-        SubscribeUseCase::new(api.clone()),
-        SubscribeInput::new(channel_id),
-        api.presenter(),
-    )
-    .await
+    dispatch(SubscribeInput::new(channel_id), api).await
 }
 
-pub(crate) async fn publish_channel<M: ApiMods<C, P>, C: Component, P: ServerPresenter>(
+pub(crate) async fn publish_channel<M: ApiMods<P>, P: ServerPresenter>(
     State(api): State<M>,
     Path(channel_id): Path<String>,
     message: String,
 ) -> Result<Response, ()> {
-    dispatch(
-        PublishUseCase::new(api.clone()),
-        PublishInput::new(channel_id, message.as_bytes().to_vec()),
-        api.presenter(),
-    )
-    .await
+    let input = PublishInput::new(channel_id, message.as_bytes().to_vec());
+    dispatch(input, api).await
 }
 
-async fn handle_socket<M: ApiMods<C, P>, C: Component, P: ServerPresenter>(
+async fn handle_socket<M: ApiMods<P>, P: ServerPresenter>(
     api: M,
     channel_id: String,
     socket: WebSocket,
@@ -140,7 +129,6 @@ async fn handle_socket<M: ApiMods<C, P>, C: Component, P: ServerPresenter>(
             }
         }
     });
-    let interactor = PubSubUseCase::new(api.clone());
     let input = PubSubInput::new(channel_id, receiver);
-    dispatch_with(interactor, input, api.presenter(), sender).await
+    dispatch_with(input, sender, api).await
 }

@@ -45,23 +45,23 @@ where
 }
 
 #[derive(Clone, new)]
-pub struct SignupUseCase<C, Deps> {
+pub struct SignUpUseCase<C, Deps> {
     deps: Deps,
     _c: PhantomData<C>,
 }
 
 trait_set! {
-    pub trait SignupUseCaseDeps<C: Component> = Component + UseContext<Context = C>
+    pub trait SignUpUseCaseDeps<C: Component> = Component + UseContext<Context = C>
     + UseAuthenticationRepository<C>
     + UseSessionRepository<C>
     + UseMailGateway<C>
     ;
 }
 #[async_trait]
-impl<C, Deps> UseCase<SignUpInput, SignUpOutput> for SignupUseCase<C, Deps>
+impl<C, Deps> UseCase<SignUpInput, SignUpOutput> for SignUpUseCase<C, Deps>
 where
     C: Component,
-    Deps: SignupUseCaseDeps<C>,
+    Deps: SignUpUseCaseDeps<C>,
 {
     async fn handle(&self, input: SignUpInput) -> Result<SignUpOutput> {
         let ctx = self.deps.context().await?;
@@ -98,23 +98,23 @@ where
 }
 
 #[derive(Clone, new)]
-pub struct SignupFinishUseCase<C, Deps> {
+pub struct SignUpFinishUseCase<C, Deps> {
     deps: Deps,
     _c: PhantomData<C>,
 }
 
 trait_set! {
-    pub trait SignupFinishUseCaseDeps<C: Transaction> = Component + UseContext<Context = C>
+    pub trait SignUpFinishUseCaseDeps<C: Transaction> = Component + UseContext<Context = C>
     + UseAccountRepository<C>
     + UseAuthenticationRepository<C>
     + UseSessionRepository<C>
     ;
 }
 #[async_trait]
-impl<C, Deps> UseCase<SignUpFinishInput, SignUpFinishOutput> for SignupFinishUseCase<C, Deps>
+impl<C, Deps> UseCase<SignUpFinishInput, SignUpFinishOutput> for SignUpFinishUseCase<C, Deps>
 where
     C: Transaction,
-    Deps: SignupFinishUseCaseDeps<C>,
+    Deps: SignUpFinishUseCaseDeps<C>,
 {
     async fn handle(&self, input: SignUpFinishInput) -> Result<SignUpFinishOutput> {
         let tx = self.deps.context().await?;
