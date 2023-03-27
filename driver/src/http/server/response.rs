@@ -16,7 +16,7 @@ pub trait WithSetCookie {
 
 impl WithSetCookie for Response {
     fn with_cookie(mut self, c: Cookie) -> Response {
-        self.headers_mut().insert(
+        self.headers_mut().append(
             SET_COOKIE,
             HeaderValue::from_str(c.to_string().as_str()).unwrap(),
         );
@@ -26,4 +26,5 @@ impl WithSetCookie for Response {
 
 pub mod constants {
     pub static SESSION_COOKIE_ID: &str = "sid";
+    pub static TRACKING_COOKIE_ID: &str = "tid";
 }

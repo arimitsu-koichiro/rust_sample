@@ -33,7 +33,7 @@ mock! {
     }
     #[async_trait]
     impl AccountRepository<()> for AccountRepository {
-    async fn get(&self, ctx: (), id: String) -> Result<Option<Account>>;
-    async fn create(&self, ctx: (), account: NewAccount) -> Result<Account>;
+        async fn get(&self, ctx: (), id: String) -> Result<Option<Account>>;
+        async fn create(&self, ctx: (), account: NewAccount) -> Result<Account>;
     }
 }

@@ -2,8 +2,8 @@ openapi: 3.0.3
 info:
   contact:
     name: arimitsu-koichiro
-  description: sample
-  title: sample Backend
+  description: xxxx
+  title: xxxx Backend
   version: 1.0.0
 servers:
   - url: /
@@ -370,17 +370,19 @@ components:
       example:
         password: password
         mail: mail
-        remember_me: true
+        remember_me: false
       properties:
         mail:
           type: string
         password:
           type: string
         remember_me:
+          default: false
           type: boolean
       required:
         - mail
         - password
+        - remember_me
       type: object
     SignUpRequest:
       example:

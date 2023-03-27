@@ -1,4 +1,3 @@
-mod internal;
 use crate::interface::gateway::mail;
 use crate::interface::gateway::mail::{MailGateway, UseMailGateway};
 use crate::interface::repository::account::UseAccountRepository;
@@ -8,6 +7,7 @@ use crate::interface::repository::authentication::{
 use crate::interface::repository::session::UseSessionRepository;
 use crate::interface::repository::Transaction;
 use crate::interface::{Component, UseContext};
+use crate::internal;
 use crate::usecase::UseCase;
 use anyhow::Result;
 use anyhow::{bail, Context};
@@ -73,7 +73,7 @@ where
         if auth.is_some() {
             return Ok(SignUpOutput);
         }
-        let session = internal::new_preregister_session(
+        let session = internal::session::new_preregister_session(
             ctx.clone(),
             self.deps.session_repository(),
             input.mail.to_string(),
@@ -119,7 +119,7 @@ where
     async fn handle(&self, input: SignUpFinishInput) -> Result<SignUpFinishOutput> {
         let tx = self.deps.context().await?;
         let tx = tx.begin().await?;
-        let session = internal::get_preregister_session(
+        let session = internal::session::get_preregister_session(
             tx.clone(),
             self.deps.session_repository(),
             input.code.clone(),
@@ -128,7 +128,7 @@ where
         let session: Session = match session {
             Some(session) if session.code == input.code => {
                 // Save DB
-                let account = internal::signup_account(
+                let account = internal::auth::signup_account(
                     tx.clone(),
                     self.deps.account_repository(),
                     self.deps.authentication_repository(),
@@ -136,7 +136,8 @@ where
                     session.password,
                 )
                 .await?;
-                internal::new_session(tx.clone(), self.deps.session_repository(), account).await?
+                internal::session::new_session(tx.clone(), self.deps.session_repository(), account)
+                    .await?
             }
             Some(s) => bail!(unexpected!("invalid session state: {:?}", s)),
             None => bail!(unexpected!("session not found.")),
@@ -169,7 +170,7 @@ where
 {
     async fn handle(&self, input: SignInInput) -> Result<SignInOutput> {
         let db = self.deps.context().await?;
-        let account = internal::signin_account(
+        let account = internal::auth::signin_account(
             db.clone(),
             self.deps.account_repository(),
             self.deps.authentication_repository(),
@@ -178,7 +179,8 @@ where
         )
         .await?;
         let session =
-            internal::new_session(db.clone(), self.deps.session_repository(), account).await?;
+            internal::session::new_session(db.clone(), self.deps.session_repository(), account)
+                .await?;
         Ok(SignInOutput {
             session_id: session.id,
             remember_me: input.remember_me,
@@ -205,7 +207,12 @@ where
 {
     async fn handle(&self, input: SignOutInput) -> Result<SignOutOutput> {
         let ctx = self.deps.context().await?;
-        internal::invalidate_session(ctx, self.deps.session_repository(), input.session_id).await?;
+        internal::session::invalidate_session(
+            ctx,
+            self.deps.session_repository(),
+            input.session_id,
+        )
+        .await?;
         Ok(SignOutOutput)
     }
 }
@@ -320,7 +327,7 @@ pub struct GetAuthStatusInput {
     pub(crate) session: Option<Session>,
 }
 
-#[derive(new)]
+#[derive(new, Debug, PartialEq)]
 pub struct GetAuthStatusOutput;
 
 #[derive(new)]
@@ -329,7 +336,7 @@ pub struct SignUpInput {
     pub(crate) password: String,
     pub(crate) site_url: String,
 }
-#[derive(new)]
+#[derive(new, Debug, PartialEq)]
 pub struct SignUpOutput;
 
 #[derive(new)]
@@ -337,7 +344,7 @@ pub struct SignUpFinishInput {
     pub(crate) code: String,
 }
 
-#[derive(new)]
+#[derive(new, Debug, PartialEq)]
 pub struct SignUpFinishOutput {
     pub session_id: String,
 }
@@ -349,7 +356,7 @@ pub struct SignInInput {
     pub(crate) remember_me: bool,
 }
 
-#[derive(new)]
+#[derive(new, Debug, PartialEq)]
 pub struct SignInOutput {
     pub session_id: String,
     pub remember_me: bool,
@@ -360,7 +367,7 @@ pub struct SignOutInput {
     pub(crate) session_id: String,
 }
 
-#[derive(new)]
+#[derive(new, Debug, PartialEq)]
 pub struct SignOutOutput;
 
 #[derive(new)]
@@ -369,7 +376,7 @@ pub struct ForgetPasswordInput {
     pub(crate) site_url: String,
 }
 
-#[derive(new)]
+#[derive(new, Debug, PartialEq)]
 pub struct ForgetPasswordOutput;
 
 #[derive(new)]
@@ -378,5 +385,108 @@ pub struct ResetPasswordInput {
     pub(crate) password: String,
 }
 
-#[derive(new)]
+#[derive(new, Debug, PartialEq)]
 pub struct ResetPasswordOutput;
+
+#[cfg(test)]
+mod tests {
+    use crate::interface::gateway::mail::{MockMailGateway, UseMailGateway};
+    use crate::interface::repository::authentication::{
+        MockAuthenticationRepository, UseAuthenticationRepository,
+    };
+    use crate::interface::repository::session::{MockSessionRepository, UseSessionRepository};
+    use crate::interface::UseContext;
+    use crate::usecase::auth::{SignUpInput, SignUpOutput, SignUpUseCase};
+    use crate::usecase::UseCase;
+    use async_trait::async_trait;
+    use kernel::Result;
+    use mockall::predicate;
+    use std::env;
+    use std::sync::{Arc, Mutex};
+
+    #[derive(Clone)]
+    struct TestMods {
+        mock_auth_repo: Arc<MockAuthenticationRepository>,
+        mock_session_repo: Arc<MockSessionRepository>,
+        mock_mail_gateway: Arc<MockMailGateway>,
+    }
+    #[async_trait]
+    impl UseContext for TestMods {
+        type Context = ();
+        async fn context(&self) -> Result<Self::Context> {
+            Ok(())
+        }
+    }
+    impl UseAuthenticationRepository<()> for TestMods {
+        type AuthenticationRepository = Arc<MockAuthenticationRepository>;
+
+        fn authentication_repository(&self) -> Self::AuthenticationRepository {
+            self.mock_auth_repo.clone()
+        }
+    }
+    impl UseSessionRepository<()> for TestMods {
+        type SessionRepository = Arc<MockSessionRepository>;
+
+        fn session_repository(&self) -> Self::SessionRepository {
+            self.mock_session_repo.clone()
+        }
+    }
+    impl UseMailGateway<()> for TestMods {
+        type Gateway = Arc<MockMailGateway>;
+
+        fn mail_gateway(&self) -> Self::Gateway {
+            self.mock_mail_gateway.clone()
+        }
+    }
+
+    #[tokio::test]
+    async fn signup_test() {
+        let mut mock_auth_repo = MockAuthenticationRepository::default();
+        let mut mock_session_repo = MockSessionRepository::default();
+        let mut mock_mail_gateway = MockMailGateway::default();
+        let mail = "mail@example.com";
+        let password = "password";
+        let site_url = "example.com";
+        env::set_var("MAIL_DOMAIN", "example.com");
+        mock_auth_repo
+            .expect_get_by_mail()
+            .with(predicate::always(), predicate::eq(mail.to_string()))
+            .return_once(move |_, _| Ok(None));
+        let code: Arc<Mutex<String>> = Arc::new(Mutex::new("".to_string()));
+        let cloned_code = code.clone();
+        mock_session_repo
+            .expect_set_provisional_session()
+            .with(predicate::always(), predicate::always())
+            .return_once(move |_, session| {
+                assert_eq!(mail.to_string(), session.mail);
+                assert_eq!(password.to_string(), session.password);
+                *cloned_code.lock().unwrap() = session.code;
+                Ok(())
+            });
+        let cloned_code = code.clone();
+        mock_mail_gateway
+            .expect_send_email()
+            .with(predicate::always(), predicate::always())
+            .return_once(move |_, input| {
+                assert_eq!("noreply@example.com", input.from_address);
+                assert_eq!(mail.to_string(), input.to_address);
+                assert_eq!("signup link", input.subject);
+                let code = cloned_code.lock().unwrap().to_string();
+                let body = format!(
+                    "signup here! https://example.com/signup/finish?code={}",
+                    code
+                );
+                assert_eq!(body, input.body);
+                Ok(())
+            });
+        let mods = TestMods {
+            mock_auth_repo: Arc::new(mock_auth_repo),
+            mock_session_repo: Arc::new(mock_session_repo),
+            mock_mail_gateway: Arc::new(mock_mail_gateway),
+        };
+        let interactor = SignUpUseCase::<(), TestMods>::new(mods);
+        let input = SignUpInput::new(mail.to_string(), password.to_string(), site_url.to_string());
+        let output = interactor.handle(input).await.unwrap();
+        assert_eq!(output, SignUpOutput);
+    }
+}

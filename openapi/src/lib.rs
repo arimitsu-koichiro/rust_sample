@@ -1,3 +1,4 @@
+#![allow(clippy::pedantic)]
 #![allow(clippy::all)]
 #![allow(
     missing_docs,

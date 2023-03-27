@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
         load_from_ssm(ssm_envs_path).await?;
     }
     log::init();
-    let config = config::Config::new();
+    let config = config::Config::new()?;
     let db = DB::new(config.mysql_config).await?;
     let redis = Redis::new(config.redis_config).await?;
     driver::http::server::api::start(config.api_config, Modules::new(db, redis)).await?;

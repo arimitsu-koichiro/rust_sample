@@ -24,7 +24,6 @@ pub async fn load_from_ssm(path: String) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[allow(dead_code)]
 pub async fn get_parameter(name: &str, with_decryption: Option<bool>) -> Result<Option<String>> {
     let client = get_client();
     match client
@@ -42,7 +41,6 @@ pub async fn get_parameter(name: &str, with_decryption: Option<bool>) -> Result<
     }
 }
 
-#[allow(dead_code)]
 pub async fn get_parameters_by_path(
     path: &str,
     with_decryption: Option<bool>,

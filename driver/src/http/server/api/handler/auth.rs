@@ -1,7 +1,6 @@
 use crate::dispatch;
 use crate::http::server::api::{Mods, ServerPresenter};
 use crate::http::server::middleware::session::{ExtractSession, RequireSession};
-
 use application::usecase::auth::{
     ForgetPasswordInput, GetAuthStatusInput, ResetPasswordInput, SignInInput, SignOutInput,
     SignUpFinishInput, SignUpInput,
@@ -44,8 +43,7 @@ pub(crate) async fn signin<M: Mods<P>, P: ServerPresenter>(
         remember_me,
     }): Json<SigninRequest>,
 ) -> Result<Response, ()> {
-    let input = SignInInput::new(mail, password, remember_me.unwrap_or(false));
-    dispatch(input, mods).await
+    dispatch(SignInInput::new(mail, password, remember_me), mods).await
 }
 
 pub(crate) async fn signout<M: Mods<P>, P: ServerPresenter>(

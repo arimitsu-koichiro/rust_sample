@@ -4,7 +4,8 @@ use crate::http::server::middleware::csrf::csrf_protection;
 use crate::http::server::middleware::request_id::MakeRequestBase62Uuid;
 use crate::http::server::middleware::session::RequireSession;
 
-use axum::middleware::from_extractor_with_state;
+use crate::http::server::middleware::tracking::TrackingLayer;
+use axum::middleware::{from_extractor_with_state, from_fn};
 use axum::routing::{get, post, Router};
 use tower_http::request_id::{PropagateRequestIdLayer, SetRequestIdLayer};
 use tower_http::trace::{DefaultMakeSpan, TraceLayer};
@@ -49,6 +50,7 @@ pub(crate) fn define_route<M: Mods<P>, P: ServerPresenter>(mods: M) -> Router {
         )
         .layer(PropagateRequestIdLayer::x_request_id())
         .layer(SetRequestIdLayer::x_request_id(MakeRequestBase62Uuid))
-        .layer(axum::middleware::from_fn(csrf_protection))
+        .layer(from_fn(csrf_protection))
+        .layer(TrackingLayer::default())
         .with_state(mods)
 }

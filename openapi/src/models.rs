@@ -19,7 +19,6 @@ pub struct Account {
 
 impl Account {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new(id: String, name: String, display_name: String) -> Account {
         Account {
             id,
@@ -140,7 +139,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<Account>> for hyper::header::
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for Account - value: {hdr_value} is invalid {e}"
+                "Invalid header value for Account - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -158,12 +158,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue> for header::IntoHeaderVal
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into Account - {err}"
+                        "Unable to convert header value '{}' into Account - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }
@@ -181,13 +183,12 @@ pub struct ChannelMessage {
 
 impl ChannelMessage {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new(topic: String, payload: String) -> ChannelMessage {
         ChannelMessage { topic, payload }
     }
 }
 
-/// Converts the `ChannelMessage` value to the Query Parameters representation (style=form, explode=false)
+/// Converts the ChannelMessage value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
 impl std::string::ToString for ChannelMessage {
@@ -203,7 +204,7 @@ impl std::string::ToString for ChannelMessage {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a `ChannelMessage` value
+/// Converts Query Parameters representation (style=form, explode=false) to a ChannelMessage value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
 impl std::str::FromStr for ChannelMessage {
@@ -286,7 +287,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<ChannelMessage>> for hyper::h
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for ChannelMessage - value: {hdr_value} is invalid {e}"
+                "Invalid header value for ChannelMessage - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -304,12 +306,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue> for header::IntoHeaderVal
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into ChannelMessage - {err}"
+                        "Unable to convert header value '{}' into ChannelMessage - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }
@@ -331,7 +335,6 @@ pub struct ErrorMessage {
 
 impl ErrorMessage {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new(status: i32, r#type: String) -> ErrorMessage {
         ErrorMessage {
             status,
@@ -341,7 +344,7 @@ impl ErrorMessage {
     }
 }
 
-/// Converts the `ErrorMessage` value to the Query Parameters representation (style=form, explode=false)
+/// Converts the ErrorMessage value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
 impl std::string::ToString for ErrorMessage {
@@ -360,7 +363,7 @@ impl std::string::ToString for ErrorMessage {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a `ErrorMessage` value
+/// Converts Query Parameters representation (style=form, explode=false) to a ErrorMessage value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
 impl std::str::FromStr for ErrorMessage {
@@ -449,7 +452,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<ErrorMessage>> for hyper::hea
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for ErrorMessage - value: {hdr_value} is invalid {e}"
+                "Invalid header value for ErrorMessage - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -467,12 +471,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue> for header::IntoHeaderVal
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into ErrorMessage - {err}"
+                        "Unable to convert header value '{}' into ErrorMessage - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }
@@ -487,13 +493,12 @@ pub struct ForgetPasswordRequest {
 
 impl ForgetPasswordRequest {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new(mail: String) -> ForgetPasswordRequest {
         ForgetPasswordRequest { mail }
     }
 }
 
-/// Converts the `ForgetPasswordRequest` value to the Query Parameters representation (style=form, explode=false)
+/// Converts the ForgetPasswordRequest value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
 impl std::string::ToString for ForgetPasswordRequest {
@@ -505,7 +510,7 @@ impl std::string::ToString for ForgetPasswordRequest {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a `ForgetPasswordRequest` value
+/// Converts Query Parameters representation (style=form, explode=false) to a ForgetPasswordRequest value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
 impl std::str::FromStr for ForgetPasswordRequest {
@@ -580,7 +585,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<ForgetPasswordRequest>>
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for ForgetPasswordRequest - value: {hdr_value} is invalid {e}"
+                "Invalid header value for ForgetPasswordRequest - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -600,12 +606,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue>
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into ForgetPasswordRequest - {err}"
+                        "Unable to convert header value '{}' into ForgetPasswordRequest - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }
@@ -623,13 +631,12 @@ pub struct ResetPasswordRequest {
 
 impl ResetPasswordRequest {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new(code: String, password: String) -> ResetPasswordRequest {
         ResetPasswordRequest { code, password }
     }
 }
 
-/// Converts the `ResetPasswordRequest` value to the Query Parameters representation (style=form, explode=false)
+/// Converts the ResetPasswordRequest value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
 impl std::string::ToString for ResetPasswordRequest {
@@ -645,7 +652,7 @@ impl std::string::ToString for ResetPasswordRequest {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a `ResetPasswordRequest` value
+/// Converts Query Parameters representation (style=form, explode=false) to a ResetPasswordRequest value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
 impl std::str::FromStr for ResetPasswordRequest {
@@ -730,7 +737,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<ResetPasswordRequest>>
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for ResetPasswordRequest - value: {hdr_value} is invalid {e}"
+                "Invalid header value for ResetPasswordRequest - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -750,12 +758,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue>
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into ResetPasswordRequest - {err}"
+                        "Unable to convert header value '{}' into ResetPasswordRequest - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }
@@ -770,13 +780,12 @@ pub struct SignUpFinishRequest {
 
 impl SignUpFinishRequest {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new(code: String) -> SignUpFinishRequest {
         SignUpFinishRequest { code }
     }
 }
 
-/// Converts the `SignUpFinishRequest` value to the Query Parameters representation (style=form, explode=false)
+/// Converts the SignUpFinishRequest value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
 impl std::string::ToString for SignUpFinishRequest {
@@ -788,7 +797,7 @@ impl std::string::ToString for SignUpFinishRequest {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a `SignUpFinishRequest` value
+/// Converts Query Parameters representation (style=form, explode=false) to a SignUpFinishRequest value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
 impl std::str::FromStr for SignUpFinishRequest {
@@ -863,7 +872,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<SignUpFinishRequest>>
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for SignUpFinishRequest - value: {hdr_value} is invalid {e}"
+                "Invalid header value for SignUpFinishRequest - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -883,12 +893,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue>
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into SignUpFinishRequest - {err}"
+                        "Unable to convert header value '{}' into SignUpFinishRequest - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }
@@ -906,13 +918,12 @@ pub struct SignUpRequest {
 
 impl SignUpRequest {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new(mail: String, password: String) -> SignUpRequest {
         SignUpRequest { mail, password }
     }
 }
 
-/// Converts the `SignUpRequest` value to the Query Parameters representation (style=form, explode=false)
+/// Converts the SignUpRequest value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
 impl std::string::ToString for SignUpRequest {
@@ -928,7 +939,7 @@ impl std::string::ToString for SignUpRequest {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a `SignUpRequest` value
+/// Converts Query Parameters representation (style=form, explode=false) to a SignUpRequest value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
 impl std::str::FromStr for SignUpRequest {
@@ -1011,7 +1022,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<SignUpRequest>> for hyper::he
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for SignUpRequest - value: {hdr_value} is invalid {e}"
+                "Invalid header value for SignUpRequest - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -1029,12 +1041,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue> for header::IntoHeaderVal
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into SignUpRequest - {err}"
+                        "Unable to convert header value '{}' into SignUpRequest - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }
@@ -1050,23 +1064,21 @@ pub struct SigninRequest {
     pub password: String,
 
     #[serde(rename = "remember_me")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remember_me: Option<bool>,
+    pub remember_me: bool,
 }
 
 impl SigninRequest {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new(mail: String, password: String) -> SigninRequest {
         SigninRequest {
             mail,
             password,
-            remember_me: None,
+            remember_me: false,
         }
     }
 }
 
-/// Converts the `SigninRequest` value to the Query Parameters representation (style=form, explode=false)
+/// Converts the SigninRequest value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
 impl std::string::ToString for SigninRequest {
@@ -1076,16 +1088,15 @@ impl std::string::ToString for SigninRequest {
             Some(self.mail.to_string()),
             Some("password".to_string()),
             Some(self.password.to_string()),
-            self.remember_me.as_ref().map(|remember_me| {
-                vec!["remember_me".to_string(), remember_me.to_string()].join(",")
-            }),
+            Some("remember_me".to_string()),
+            Some(self.remember_me.to_string()),
         ];
 
         params.into_iter().flatten().collect::<Vec<_>>().join(",")
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a `SigninRequest` value
+/// Converts Query Parameters representation (style=form, explode=false) to a SigninRequest value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
 impl std::str::FromStr for SigninRequest {
@@ -1156,7 +1167,11 @@ impl std::str::FromStr for SigninRequest {
                 .into_iter()
                 .next()
                 .ok_or_else(|| "password missing in SigninRequest".to_string())?,
-            remember_me: intermediate_rep.remember_me.into_iter().next(),
+            remember_me: intermediate_rep
+                .remember_me
+                .into_iter()
+                .next()
+                .ok_or_else(|| "remember_me missing in SigninRequest".to_string())?,
         })
     }
 }
@@ -1174,7 +1189,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<SigninRequest>> for hyper::he
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for SigninRequest - value: {hdr_value} is invalid {e}"
+                "Invalid header value for SigninRequest - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -1192,12 +1208,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue> for header::IntoHeaderVal
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into SigninRequest - {err}"
+                        "Unable to convert header value '{}' into SigninRequest - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }
@@ -1212,7 +1230,6 @@ pub struct StatusOk {
 
 impl StatusOk {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new() -> StatusOk {
         StatusOk {
             status: "OK".to_string(),
@@ -1220,7 +1237,7 @@ impl StatusOk {
     }
 }
 
-/// Converts the `StatusOk` value to the Query Parameters representation (style=form, explode=false)
+/// Converts the StatusOk value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
 impl std::string::ToString for StatusOk {
@@ -1232,7 +1249,7 @@ impl std::string::ToString for StatusOk {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a `StatusOk` value
+/// Converts Query Parameters representation (style=form, explode=false) to a StatusOk value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
 impl std::str::FromStr for StatusOk {
@@ -1305,7 +1322,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<StatusOk>> for hyper::header:
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for StatusOk - value: {hdr_value} is invalid {e}"
+                "Invalid header value for StatusOk - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -1323,12 +1341,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue> for header::IntoHeaderVal
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into StatusOk - {err}"
+                        "Unable to convert header value '{}' into StatusOk - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }
@@ -1349,7 +1369,6 @@ pub struct StatusResponse {
 
 impl StatusResponse {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new(status: String, version: String, build_timestamp: String) -> StatusResponse {
         StatusResponse {
             status,
@@ -1359,7 +1378,7 @@ impl StatusResponse {
     }
 }
 
-/// Converts the `StatusResponse` value to the Query Parameters representation (style=form, explode=false)
+/// Converts the StatusResponse value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
 impl std::string::ToString for StatusResponse {
@@ -1377,7 +1396,7 @@ impl std::string::ToString for StatusResponse {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a `StatusResponse` value
+/// Converts Query Parameters representation (style=form, explode=false) to a StatusResponse value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
 impl std::str::FromStr for StatusResponse {
@@ -1470,7 +1489,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<StatusResponse>> for hyper::h
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for StatusResponse - value: {hdr_value} is invalid {e}"
+                "Invalid header value for StatusResponse - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -1488,12 +1508,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue> for header::IntoHeaderVal
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into StatusResponse - {err}"
+                        "Unable to convert header value '{}' into StatusResponse - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }
@@ -1511,13 +1533,12 @@ pub struct StatusWithMessage {
 
 impl StatusWithMessage {
     #[allow(clippy::new_without_default)]
-    #[must_use]
     pub fn new(status: String, message: String) -> StatusWithMessage {
         StatusWithMessage { status, message }
     }
 }
 
-/// Converts the `StatusWithMessage` value to the Query Parameters representation (style=form, explode=false)
+/// Converts the StatusWithMessage value to the Query Parameters representation (style=form, explode=false)
 /// specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde serializer
 impl std::string::ToString for StatusWithMessage {
@@ -1533,7 +1554,7 @@ impl std::string::ToString for StatusWithMessage {
     }
 }
 
-/// Converts Query Parameters representation (style=form, explode=false) to a `StatusWithMessage` value
+/// Converts Query Parameters representation (style=form, explode=false) to a StatusWithMessage value
 /// as specified in https://swagger.io/docs/specification/serialization/
 /// Should be implemented in a serde deserializer
 impl std::str::FromStr for StatusWithMessage {
@@ -1618,7 +1639,8 @@ impl std::convert::TryFrom<header::IntoHeaderValue<StatusWithMessage>>
         match hyper::header::HeaderValue::from_str(&hdr_value) {
             std::result::Result::Ok(value) => std::result::Result::Ok(value),
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Invalid header value for StatusWithMessage - value: {hdr_value} is invalid {e}"
+                "Invalid header value for StatusWithMessage - value: {} is invalid {}",
+                hdr_value, e
             )),
         }
     }
@@ -1638,12 +1660,14 @@ impl std::convert::TryFrom<hyper::header::HeaderValue>
                         std::result::Result::Ok(header::IntoHeaderValue(value))
                     }
                     std::result::Result::Err(err) => std::result::Result::Err(format!(
-                        "Unable to convert header value '{value}' into StatusWithMessage - {err}"
+                        "Unable to convert header value '{}' into StatusWithMessage - {}",
+                        value, err
                     )),
                 }
             }
             std::result::Result::Err(e) => std::result::Result::Err(format!(
-                "Unable to convert header: {hdr_value:?} to string: {e}"
+                "Unable to convert header: {:?} to string: {}",
+                hdr_value, e
             )),
         }
     }

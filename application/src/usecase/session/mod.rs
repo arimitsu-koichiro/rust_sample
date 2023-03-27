@@ -1,5 +1,6 @@
-use crate::interface::repository::session::{SessionRepository, UseSessionRepository};
+use crate::interface::repository::session::UseSessionRepository;
 use crate::interface::{Component, UseContext};
+use crate::internal;
 use crate::usecase::UseCase;
 use async_trait::async_trait;
 use kernel::entity::Session;
@@ -27,12 +28,13 @@ where
     Deps: GetSessionUseCaseDeps<C>,
 {
     async fn handle(&self, input: GetSessionInput) -> Result<GetSessionOutput> {
-        let result = self
-            .deps
-            .session_repository()
-            .get(self.deps.context().await?, input.session_id)
-            .await?;
-        Ok(GetSessionOutput::new(result))
+        let session = internal::session::get_session(
+            self.deps.context().await?,
+            self.deps.session_repository(),
+            input.session_id,
+        )
+        .await?;
+        Ok(GetSessionOutput::new(session))
     }
 }
 

@@ -23,6 +23,7 @@ use serde::Serialize;
 use std::convert::Infallible;
 use std::time::Duration;
 use tokio::sync::mpsc::Sender;
+use tokio_stream::wrappers::ReceiverStream;
 
 #[derive(Clone, Default)]
 pub struct OpenAPIServerPresenter;
@@ -130,7 +131,7 @@ impl Present<Result<PubSubOutput>, Sender<Vec<u8>>> for OpenAPIServerPresenter {
             return;
         };
         tokio::spawn(async move {
-            let mut stream = tokio_stream::wrappers::ReceiverStream::new(output.rx);
+            let mut stream = ReceiverStream::new(output.rx);
             while let Some(msg) = stream.next().await {
                 let _ = attachment.send(msg).await;
             }
@@ -205,7 +206,7 @@ fn present_subscribe_output(data: Result<SubscribeOutput>) -> Response {
         Ok(output) => {
             let (sender, rx) = tokio::sync::mpsc::channel::<Result<Event, Infallible>>(1000);
             tokio::spawn(async move {
-                let mut stream = tokio_stream::wrappers::ReceiverStream::new(output.rx);
+                let mut stream = ReceiverStream::new(output.rx);
                 while let Some(msg) = stream.next().await {
                     let result = String::from_utf8_lossy(msg.as_slice()).to_string();
                     match sender.send(Ok(Event::default().data(result))).await {
@@ -217,7 +218,7 @@ fn present_subscribe_output(data: Result<SubscribeOutput>) -> Response {
                     }
                 }
             });
-            Sse::new(tokio_stream::wrappers::ReceiverStream::new(rx))
+            Sse::new(ReceiverStream::new(rx))
                 .keep_alive(
                     axum::response::sse::KeepAlive::new()
                         .interval(Duration::from_secs(1))

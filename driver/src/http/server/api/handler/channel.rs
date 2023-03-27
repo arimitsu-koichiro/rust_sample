@@ -1,9 +1,6 @@
 use crate::http::server::api::{Mods, ServerPresenter};
-
 use crate::{dispatch, dispatch_with};
-
 use application::usecase::channel::{PubSubInput, PublishInput, SubscribeInput};
-
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{Path, State, WebSocketUpgrade};
 use axum::response::Response;
@@ -16,15 +13,15 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::mpsc::channel;
 use tokio::sync::Mutex;
+use tokio_stream::wrappers::ReceiverStream;
 
 pub(crate) async fn channel_socket<M: Mods<P>, P: ServerPresenter>(
     State(mods): State<M>,
     Path(channel_id): Path<String>,
     ws: WebSocketUpgrade,
-) -> Result<Response, ()> {
-    Ok(ws
-        .protocols(["x-protocol"])
-        .on_upgrade(move |socket| async { handle_socket(mods, channel_id, socket).await }))
+) -> Response {
+    ws.protocols(["x-protocol"])
+        .on_upgrade(move |socket| async { handle_socket(mods, channel_id, socket).await })
 }
 
 pub(crate) async fn subscribe_channel<M: Mods<P>, P: ServerPresenter>(
@@ -98,7 +95,7 @@ async fn handle_socket<M: Mods<P>, P: ServerPresenter>(
     });
     let cloned_outbound = outbound.clone();
     tokio::spawn(async move {
-        let mut stream = tokio_stream::wrappers::ReceiverStream::new(exchange_receiver);
+        let mut stream = ReceiverStream::new(exchange_receiver);
         while let Some(msg) = stream.next().await {
             match cloned_outbound
                 .lock()

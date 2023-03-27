@@ -1,11 +1,16 @@
 use crate::http::server::middleware::{get_header, require_header};
 use crate::http::server::response::response_with_code;
+use axum::headers::HeaderName;
+use axum::http::header::{ACCEPT, HOST, ORIGIN, SEC_WEBSOCKET_PROTOCOL};
 use axum::http::{Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use helper::env::get_var;
 use kernel::Result;
 use log;
+use std::string::ToString;
+
+const CSRF_CHECK_WHITELIST: &[&str] = &["/api/v1/status"];
 
 pub(crate) async fn csrf_protection<B>(
     request: Request<B>,
@@ -16,20 +21,20 @@ pub(crate) async fn csrf_protection<B>(
         return Ok(next.run(request).await);
     }
     let headers = request.headers();
-    let env_hosts = get_var::<String>("CSRF_ALLOW_SITE_HOSTS")?;
-    let host = require_header(headers, "host")?;
+    let host = require_header(headers, &HOST)?;
+    let env_hosts: String = get_var::<String>("CSRF_ALLOW_SITE_HOSTS")?;
     if !env_hosts.contains(&host) {
         return Ok(response_with_code(
             StatusCode::FORBIDDEN,
             format!("invalid host: {host}"),
         ));
     }
-    let is_websocket = get_header(headers, "sec-websocket-protocol")?.is_some();
-    let is_event_stream = get_header(headers, "accept")? == Some("text/event-stream".to_string());
-    let x_from = get_header(headers, "x-from")?;
-    let env_urls = get_var::<String>("CSRF_ALLOW_X_FROM")?;
+    let is_websocket = get_header(headers, &SEC_WEBSOCKET_PROTOCOL)?.is_some();
+    let is_event_stream = get_header(headers, &ACCEPT)? == Some("text/event-stream".to_string());
+    let x_from = get_header(headers, &HeaderName::from_static("x-from"))?;
+    let env_urls: String = get_var::<String>("CSRF_ALLOW_X_FROM")?;
     match x_from {
-        Some(_) => match get_header(headers, "origin")? {
+        Some(_) => match get_header(headers, &ORIGIN)? {
             Some(origin) if !env_urls.contains(&origin) => {
                 return Ok(response_with_code(
                     StatusCode::FORBIDDEN,
@@ -64,4 +69,3 @@ impl From<anyhow::Error> for CSRFError {
         CSRFError(err)
     }
 }
-const CSRF_CHECK_WHITELIST: &[&str] = &["/api/v1/status"];

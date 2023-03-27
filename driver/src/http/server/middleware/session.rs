@@ -9,56 +9,43 @@ use axum::http::request::Parts;
 use axum::http::StatusCode;
 use cookie::Cookie;
 use kernel::entity::Session;
+use trait_set::trait_set;
 
 pub struct ExtractSession(pub Option<Session>);
 pub struct RequireSession(pub Session);
 
+trait_set! {
+    trait State = Send + Sync + UseUseCase<GetSessionInput, GetSessionOutput>;
+}
+
 #[async_trait]
-impl<S> FromRequestParts<S> for ExtractSession
-where
-    S: Send + Sync,
-    S: UseUseCase<GetSessionInput, GetSessionOutput>,
-{
+impl<S: State> FromRequestParts<S> for ExtractSession {
     type Rejection = (StatusCode, &'static str);
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        for cookie in parts.headers.get_all(COOKIE) {
-            let Ok(cookie) = cookie.to_str() else {
-                continue
-            };
-            let Ok(cookie) = Cookie::parse(cookie) else {
-                continue
-            };
-            if cookie.name() != constants::SESSION_COOKIE_ID {
-                continue;
-            }
-            return match state
-                .usecase()
-                .handle(GetSessionInput::new(cookie.value().to_string()))
-                .await
-            {
-                Ok(session) => Ok(ExtractSession(session.session)),
-                _ => Ok(ExtractSession(None)),
-            };
-        }
-        Ok(ExtractSession(None))
+        Ok(ExtractSession(get_session(parts, state).await))
     }
 }
 
 #[async_trait]
-impl<S> FromRequestParts<S> for RequireSession
-where
-    S: Send + Sync,
-    S: UseUseCase<GetSessionInput, GetSessionOutput>,
-{
+impl<S: State> FromRequestParts<S> for RequireSession {
     type Rejection = (StatusCode, &'static str);
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        for cookie in parts.headers.get_all(COOKIE) {
-            let Ok(cookie) = cookie.to_str() else {
-                continue
-            };
-            let Ok(cookie) = Cookie::parse(cookie) else {
+        match get_session(parts, state).await {
+            Some(session) => Ok(RequireSession(session)),
+            _ => Err((StatusCode::BAD_REQUEST, "invalid session")),
+        }
+    }
+}
+
+async fn get_session<S: State>(parts: &mut Parts, state: &S) -> Option<Session> {
+    for cookie in parts.headers.get_all(COOKIE) {
+        let Ok(cookie) = cookie.to_str() else {
+            continue
+        };
+        for cookie in Cookie::split_parse_encoded(cookie) {
+            let Ok(cookie) = cookie else {
                 continue
             };
             if cookie.name() != constants::SESSION_COOKIE_ID {
@@ -69,12 +56,10 @@ where
                 .handle(GetSessionInput::new(cookie.value().to_string()))
                 .await
             {
-                Ok(GetSessionOutput {
-                    session: Some(session),
-                }) => Ok(RequireSession(session)),
-                _ => Err((StatusCode::BAD_REQUEST, "invalid session")),
+                Ok(output) => output.session,
+                _ => None,
             };
         }
-        Err((StatusCode::BAD_REQUEST, "invalid session"))
     }
+    None
 }

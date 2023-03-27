@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use futures::StreamExt;
 use kernel::Result;
 use tokio::sync::mpsc::Receiver;
+use tokio_stream::wrappers::ReceiverStream;
 
 #[derive(Clone, Default)]
 pub struct LoggingPresenter;
@@ -36,7 +37,7 @@ impl Present<Result<SubscribeOutput>> for LoggingPresenter {
 
 async fn logging_receiver(rx: Receiver<Vec<u8>>) {
     let _ = tokio::spawn(async move {
-        let mut stream = tokio_stream::wrappers::ReceiverStream::new(rx);
+        let mut stream = ReceiverStream::new(rx);
         while let Some(msg) = stream.next().await {
             log::info!(
                 "receive message: {}",

@@ -2,6 +2,8 @@ use crate::interface::Component;
 use async_trait::async_trait;
 use blanket::blanket;
 use kernel::Result;
+#[cfg(test)]
+use mockall::mock;
 
 #[async_trait]
 #[blanket(derive(Arc))]
@@ -20,4 +22,16 @@ pub struct SendEmailInput {
     pub to_address: String,
     pub subject: String,
     pub body: String,
+}
+
+#[cfg(test)]
+mock! {
+    pub MailGateway{}
+    impl Clone for MailGateway {
+        fn clone(&self) -> Self;
+    }
+    #[async_trait]
+    impl MailGateway<()> for MailGateway {
+        async fn send_email(&self, ctx: (), input: SendEmailInput) -> Result<()>;
+    }
 }

@@ -74,8 +74,7 @@ impl DB {
             .max_lifetime(config.max_lifetime)
             .acquire_timeout(config.connect_timeout)
             .connect(&config.url)
-            .await
-            .unwrap();
+            .await?;
         Ok(DB::Pool(db_pool))
     }
     async fn begin(conn: Arc<Mutex<PoolConnection<MySql>>>) -> Result<DB> {

@@ -12,7 +12,6 @@ fn get_client() -> S3Client {
     })
 }
 
-#[allow(dead_code)]
 pub async fn ls() -> Result<Option<Vec<Bucket>>> {
     let client = get_client();
     let result = client.list_buckets().await?;

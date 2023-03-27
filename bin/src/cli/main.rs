@@ -23,7 +23,7 @@ async fn main() -> Result<()> {
         load_from_ssm(ssm_envs_path).await?;
     }
     log::init();
-    let config = Config::new();
+    let config = Config::new()?;
     let redis = Redis::new(config.redis_config).await?;
     driver::cli::listen_pubsub(Modules::new(redis)).await?;
     Ok(())
@@ -116,8 +116,8 @@ struct Config {
 }
 
 impl Config {
-    pub fn new() -> Config {
-        compose_config().unwrap()
+    pub fn new() -> Result<Config> {
+        compose_config()
     }
 }
 fn compose_config() -> Result<Config> {

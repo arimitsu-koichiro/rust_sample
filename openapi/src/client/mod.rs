@@ -65,7 +65,10 @@ fn into_base_path(
     }
 
     let host = uri.host().ok_or(ClientInitError::MissingHost)?;
-    let port = uri.port_u16().map(|x| format!(":{x}")).unwrap_or_default();
+    let port = uri
+        .port_u16()
+        .map(|x| format!(":{}", x))
+        .unwrap_or_default();
     Ok(format!(
         "{}://{}{}{}",
         scheme,
@@ -126,7 +129,7 @@ where
     Connector: hyper::client::connect::Connect + Clone + Send + Sync + 'static,
     C: Clone + Send + Sync + 'static,
 {
-    /// Create a client with a custom implementation of `hyper::client::Connect`.
+    /// Create a client with a custom implementation of hyper::client::Connect.
     ///
     /// Intended for use with custom implementations of connect for e.g. protocol logging
     /// or similar functionality which requires wrapping the transport layer. When wrapping a TCP connection,
@@ -402,7 +405,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -412,7 +415,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -421,7 +424,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -431,7 +434,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -439,7 +443,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -447,12 +451,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::Account>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(GetAccountResponse::OK(body))
             }
@@ -460,12 +464,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(GetAccountResponse::Status0(body))
             }
@@ -479,9 +483,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -498,7 +502,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -508,7 +512,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -517,7 +521,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         // Body parameter
@@ -530,7 +534,12 @@ where
             CONTENT_TYPE,
             match HeaderValue::from_str(header) {
                 Ok(h) => h,
-                Err(e) => return Err(ApiError(format!("Unable to create header: {header} - {e}"))),
+                Err(e) => {
+                    return Err(ApiError(format!(
+                        "Unable to create header: {} - {}",
+                        header, e
+                    )))
+                }
             },
         );
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -540,7 +549,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -548,7 +558,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -556,12 +566,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::StatusOk>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(ForgetPasswordResponse::OK(body))
             }
@@ -569,12 +579,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(ForgetPasswordResponse::Status0(body))
             }
@@ -588,9 +598,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -603,7 +613,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -613,7 +623,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -622,7 +632,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -632,7 +642,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -640,7 +651,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -648,12 +659,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::StatusOk>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(GetAuthStatusResponse::OK(body))
             }
@@ -661,12 +672,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(GetAuthStatusResponse::Status0(body))
             }
@@ -680,9 +691,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -699,7 +710,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -709,7 +720,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -718,7 +729,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let body = serde_json::to_string(&param_reset_password_request)
@@ -730,7 +741,12 @@ where
             CONTENT_TYPE,
             match HeaderValue::from_str(header) {
                 Ok(h) => h,
-                Err(e) => return Err(ApiError(format!("Unable to create header: {header} - {e}"))),
+                Err(e) => {
+                    return Err(ApiError(format!(
+                        "Unable to create header: {} - {}",
+                        header, e
+                    )))
+                }
             },
         );
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -740,7 +756,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -748,7 +765,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -756,12 +773,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::StatusOk>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(ResetPasswordResponse::OK(body))
             }
@@ -769,12 +786,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(ResetPasswordResponse::Status0(body))
             }
@@ -788,9 +805,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -807,7 +824,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -817,7 +834,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -826,7 +843,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let body =
@@ -838,7 +855,12 @@ where
             CONTENT_TYPE,
             match HeaderValue::from_str(header) {
                 Ok(h) => h,
-                Err(e) => return Err(ApiError(format!("Unable to create header: {header} - {e}"))),
+                Err(e) => {
+                    return Err(ApiError(format!(
+                        "Unable to create header: {} - {}",
+                        header, e
+                    )))
+                }
             },
         );
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -848,7 +870,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -856,7 +879,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -864,12 +887,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::StatusOk>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(SigninResponse::OK(body))
             }
@@ -877,12 +900,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(SigninResponse::Status0(body))
             }
@@ -896,9 +919,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -911,7 +934,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -921,7 +944,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -930,7 +953,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -940,7 +963,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -948,7 +972,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -956,12 +980,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::StatusOk>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(SignoutResponse::OK(body))
             }
@@ -969,12 +993,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(SignoutResponse::Status0(body))
             }
@@ -988,9 +1012,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -1007,7 +1031,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -1017,7 +1041,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -1026,7 +1050,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let body =
@@ -1038,7 +1062,12 @@ where
             CONTENT_TYPE,
             match HeaderValue::from_str(header) {
                 Ok(h) => h,
-                Err(e) => return Err(ApiError(format!("Unable to create header: {header} - {e}"))),
+                Err(e) => {
+                    return Err(ApiError(format!(
+                        "Unable to create header: {} - {}",
+                        header, e
+                    )))
+                }
             },
         );
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -1048,7 +1077,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -1056,7 +1086,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -1064,12 +1094,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::StatusOk>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(SignupResponse::OK(body))
             }
@@ -1077,12 +1107,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(SignupResponse::Status0(body))
             }
@@ -1096,9 +1126,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -1115,7 +1145,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -1125,7 +1155,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -1134,7 +1164,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let body = serde_json::to_string(&param_sign_up_finish_request)
@@ -1147,7 +1177,12 @@ where
             CONTENT_TYPE,
             match HeaderValue::from_str(header) {
                 Ok(h) => h,
-                Err(e) => return Err(ApiError(format!("Unable to create header: {header} - {e}"))),
+                Err(e) => {
+                    return Err(ApiError(format!(
+                        "Unable to create header: {} - {}",
+                        header, e
+                    )))
+                }
             },
         );
 
@@ -1158,7 +1193,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -1166,7 +1202,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -1174,12 +1210,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::StatusOk>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(SignupFinishResponse::OK(body))
             }
@@ -1187,12 +1223,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(SignupFinishResponse::Status0(body))
             }
@@ -1206,9 +1242,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -1229,7 +1265,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -1239,7 +1275,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -1248,7 +1284,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -1258,7 +1294,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -1266,7 +1303,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -1274,12 +1311,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::StatusOk>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(ChannelCocketResponse::OK(body))
             }
@@ -1287,12 +1324,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(ChannelCocketResponse::Status0(body))
             }
@@ -1306,9 +1343,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -1330,7 +1367,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -1340,7 +1377,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -1349,7 +1386,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let body =
@@ -1361,7 +1398,12 @@ where
             CONTENT_TYPE,
             match HeaderValue::from_str(header) {
                 Ok(h) => h,
-                Err(e) => return Err(ApiError(format!("Unable to create header: {header} - {e}"))),
+                Err(e) => {
+                    return Err(ApiError(format!(
+                        "Unable to create header: {} - {}",
+                        header, e
+                    )))
+                }
             },
         );
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -1371,7 +1413,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -1379,7 +1422,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -1387,12 +1430,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::StatusOk>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(PublishChannelResponse::OK(body))
             }
@@ -1400,12 +1443,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(PublishChannelResponse::Status0(body))
             }
@@ -1419,9 +1462,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -1442,7 +1485,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -1452,7 +1495,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -1461,7 +1504,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -1471,7 +1514,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -1479,7 +1523,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -1487,12 +1531,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ChannelMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(SubscribeChannelResponse::OK(body))
             }
@@ -1500,12 +1544,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(SubscribeChannelResponse::Status0(body))
             }
@@ -1519,9 +1563,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }
@@ -1534,7 +1578,7 @@ where
 
         // Query parameters
         let query_string = {
-            let mut query_string = form_urlencoded::Serializer::new(String::new());
+            let mut query_string = form_urlencoded::Serializer::new("".to_owned());
             query_string.finish()
         };
         if !query_string.is_empty() {
@@ -1544,7 +1588,7 @@ where
 
         let uri = match Uri::from_str(&uri) {
             Ok(uri) => uri,
-            Err(err) => return Err(ApiError(format!("Unable to build URI: {err}"))),
+            Err(err) => return Err(ApiError(format!("Unable to build URI: {}", err))),
         };
 
         let mut request = match Request::builder()
@@ -1553,7 +1597,7 @@ where
             .body(Body::empty())
         {
             Ok(req) => req,
-            Err(e) => return Err(ApiError(format!("Unable to create request: {e}"))),
+            Err(e) => return Err(ApiError(format!("Unable to create request: {}", e))),
         };
 
         let header = HeaderValue::from_str(Has::<XSpanIdString>::get(context).0.as_str());
@@ -1563,7 +1607,8 @@ where
                 Ok(h) => h,
                 Err(e) => {
                     return Err(ApiError(format!(
-                        "Unable to create X-Span ID header value: {e}"
+                        "Unable to create X-Span ID header value: {}",
+                        e
                     )))
                 }
             },
@@ -1571,7 +1616,7 @@ where
 
         let response = client_service
             .call((request, context.clone()))
-            .map_err(|e| ApiError(format!("No response received: {e}")))
+            .map_err(|e| ApiError(format!("No response received: {}", e)))
             .await?;
 
         match response.status().as_u16() {
@@ -1579,12 +1624,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::StatusResponse>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(GetStatusResponse::OK(body))
             }
@@ -1592,12 +1637,12 @@ where
                 let body = response.into_body();
                 let body = body
                     .into_raw()
-                    .map_err(|e| ApiError(format!("Failed to read response: {e}")))
+                    .map_err(|e| ApiError(format!("Failed to read response: {}", e)))
                     .await?;
                 let body = str::from_utf8(&body)
-                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {e}")))?;
+                    .map_err(|e| ApiError(format!("Response was not valid UTF8: {}", e)))?;
                 let body = serde_json::from_str::<models::ErrorMessage>(body).map_err(|e| {
-                    ApiError(format!("Response body did not match the schema: {e}"))
+                    ApiError(format!("Response body did not match the schema: {}", e))
                 })?;
                 Ok(GetStatusResponse::Status0(body))
             }
@@ -1611,9 +1656,9 @@ where
                     match body {
                         Ok(body) => match String::from_utf8(body) {
                             Ok(body) => body,
-                            Err(e) => format!("<Body was not UTF8: {e:?}>"),
+                            Err(e) => format!("<Body was not UTF8: {:?}>", e),
                         },
-                        Err(e) => format!("<Failed to read body: {e}>"),
+                        Err(e) => format!("<Failed to read body: {}>", e),
                     }
                 )))
             }

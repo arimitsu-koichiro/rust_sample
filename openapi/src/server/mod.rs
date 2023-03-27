@@ -203,7 +203,7 @@ where
                         Ok(param_account_id) => param_account_id,
                         Err(e) => return Ok(Response::builder()
                                         .status(StatusCode::BAD_REQUEST)
-                                        .body(Body::from(format!("Couldn't parse path parameter account_id: {e}")))
+                                        .body(Body::from(format!("Couldn't parse path parameter account_id: {}", e)))
                                         .expect("Unable to create Bad Request response for invalid path parameter")),
                     },
                     Err(_) => return Ok(Response::builder()
@@ -282,7 +282,7 @@ where
                                         Ok(param_forget_password_request) => param_forget_password_request,
                                         Err(e) => return Ok(Response::builder()
                                                         .status(StatusCode::BAD_REQUEST)
-                                                        .body(Body::from(format!("Couldn't parse body parameter ForgetPasswordRequest - doesn't match schema: {e}")))
+                                                        .body(Body::from(format!("Couldn't parse body parameter ForgetPasswordRequest - doesn't match schema: {}", e)))
                                                         .expect("Unable to create Bad Request response for invalid body parameter ForgetPasswordRequest due to schema")),
                                     }
                                 } else {
@@ -309,7 +309,7 @@ where
                                         if !unused_elements.is_empty() {
                                             response.headers_mut().insert(
                                                 HeaderName::from_static("warning"),
-                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {unused_elements:?}").as_str())
+                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {:?}", unused_elements).as_str())
                                                     .expect("Unable to create Warning header value"));
                                         }
 
@@ -350,7 +350,7 @@ where
                             },
                             Err(e) => Ok(Response::builder()
                                                 .status(StatusCode::BAD_REQUEST)
-                                                .body(Body::from(format!("Couldn't read body parameter ForgetPasswordRequest: {e}")))
+                                                .body(Body::from(format!("Couldn't read body parameter ForgetPasswordRequest: {}", e)))
                                                 .expect("Unable to create Bad Request response due to unable to read body parameter ForgetPasswordRequest")),
                         }
                 }
@@ -425,7 +425,7 @@ where
                                         Ok(param_reset_password_request) => param_reset_password_request,
                                         Err(e) => return Ok(Response::builder()
                                                         .status(StatusCode::BAD_REQUEST)
-                                                        .body(Body::from(format!("Couldn't parse body parameter ResetPasswordRequest - doesn't match schema: {e}")))
+                                                        .body(Body::from(format!("Couldn't parse body parameter ResetPasswordRequest - doesn't match schema: {}", e)))
                                                         .expect("Unable to create Bad Request response for invalid body parameter ResetPasswordRequest due to schema")),
                                     }
                                 } else {
@@ -452,7 +452,7 @@ where
                                         if !unused_elements.is_empty() {
                                             response.headers_mut().insert(
                                                 HeaderName::from_static("warning"),
-                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {unused_elements:?}").as_str())
+                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {:?}", unused_elements).as_str())
                                                     .expect("Unable to create Warning header value"));
                                         }
 
@@ -493,7 +493,7 @@ where
                             },
                             Err(e) => Ok(Response::builder()
                                                 .status(StatusCode::BAD_REQUEST)
-                                                .body(Body::from(format!("Couldn't read body parameter ResetPasswordRequest: {e}")))
+                                                .body(Body::from(format!("Couldn't read body parameter ResetPasswordRequest: {}", e)))
                                                 .expect("Unable to create Bad Request response due to unable to read body parameter ResetPasswordRequest")),
                         }
                 }
@@ -516,7 +516,7 @@ where
                                         Ok(param_signin_request) => param_signin_request,
                                         Err(e) => return Ok(Response::builder()
                                                         .status(StatusCode::BAD_REQUEST)
-                                                        .body(Body::from(format!("Couldn't parse body parameter SigninRequest - doesn't match schema: {e}")))
+                                                        .body(Body::from(format!("Couldn't parse body parameter SigninRequest - doesn't match schema: {}", e)))
                                                         .expect("Unable to create Bad Request response for invalid body parameter SigninRequest due to schema")),
                                     }
                                 } else {
@@ -543,7 +543,7 @@ where
                                         if !unused_elements.is_empty() {
                                             response.headers_mut().insert(
                                                 HeaderName::from_static("warning"),
-                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {unused_elements:?}").as_str())
+                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {:?}", unused_elements).as_str())
                                                     .expect("Unable to create Warning header value"));
                                         }
 
@@ -584,7 +584,7 @@ where
                             },
                             Err(e) => Ok(Response::builder()
                                                 .status(StatusCode::BAD_REQUEST)
-                                                .body(Body::from(format!("Couldn't read body parameter SigninRequest: {e}")))
+                                                .body(Body::from(format!("Couldn't read body parameter SigninRequest: {}", e)))
                                                 .expect("Unable to create Bad Request response due to unable to read body parameter SigninRequest")),
                         }
                 }
@@ -663,7 +663,7 @@ where
                                         Ok(param_sign_up_request) => param_sign_up_request,
                                         Err(e) => return Ok(Response::builder()
                                                         .status(StatusCode::BAD_REQUEST)
-                                                        .body(Body::from(format!("Couldn't parse body parameter SignUpRequest - doesn't match schema: {e}")))
+                                                        .body(Body::from(format!("Couldn't parse body parameter SignUpRequest - doesn't match schema: {}", e)))
                                                         .expect("Unable to create Bad Request response for invalid body parameter SignUpRequest due to schema")),
                                     }
                                 } else {
@@ -690,7 +690,7 @@ where
                                         if !unused_elements.is_empty() {
                                             response.headers_mut().insert(
                                                 HeaderName::from_static("warning"),
-                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {unused_elements:?}").as_str())
+                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {:?}", unused_elements).as_str())
                                                     .expect("Unable to create Warning header value"));
                                         }
 
@@ -731,7 +731,7 @@ where
                             },
                             Err(e) => Ok(Response::builder()
                                                 .status(StatusCode::BAD_REQUEST)
-                                                .body(Body::from(format!("Couldn't read body parameter SignUpRequest: {e}")))
+                                                .body(Body::from(format!("Couldn't read body parameter SignUpRequest: {}", e)))
                                                 .expect("Unable to create Bad Request response due to unable to read body parameter SignUpRequest")),
                         }
                 }
@@ -754,7 +754,7 @@ where
                                         Ok(param_sign_up_finish_request) => param_sign_up_finish_request,
                                         Err(e) => return Ok(Response::builder()
                                                         .status(StatusCode::BAD_REQUEST)
-                                                        .body(Body::from(format!("Couldn't parse body parameter SignUpFinishRequest - doesn't match schema: {e}")))
+                                                        .body(Body::from(format!("Couldn't parse body parameter SignUpFinishRequest - doesn't match schema: {}", e)))
                                                         .expect("Unable to create Bad Request response for invalid body parameter SignUpFinishRequest due to schema")),
                                     }
                                 } else {
@@ -781,7 +781,7 @@ where
                                         if !unused_elements.is_empty() {
                                             response.headers_mut().insert(
                                                 HeaderName::from_static("warning"),
-                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {unused_elements:?}").as_str())
+                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {:?}", unused_elements).as_str())
                                                     .expect("Unable to create Warning header value"));
                                         }
 
@@ -822,7 +822,7 @@ where
                             },
                             Err(e) => Ok(Response::builder()
                                                 .status(StatusCode::BAD_REQUEST)
-                                                .body(Body::from(format!("Couldn't read body parameter SignUpFinishRequest: {e}")))
+                                                .body(Body::from(format!("Couldn't read body parameter SignUpFinishRequest: {}", e)))
                                                 .expect("Unable to create Bad Request response due to unable to read body parameter SignUpFinishRequest")),
                         }
                 }
@@ -843,7 +843,7 @@ where
                         Ok(param_channel_id) => param_channel_id,
                         Err(e) => return Ok(Response::builder()
                                         .status(StatusCode::BAD_REQUEST)
-                                        .body(Body::from(format!("Couldn't parse path parameter channel_id: {e}")))
+                                        .body(Body::from(format!("Couldn't parse path parameter channel_id: {}", e)))
                                         .expect("Unable to create Bad Request response for invalid path parameter")),
                     },
                     Err(_) => return Ok(Response::builder()
@@ -918,7 +918,7 @@ where
                         Ok(param_channel_id) => param_channel_id,
                         Err(e) => return Ok(Response::builder()
                                         .status(StatusCode::BAD_REQUEST)
-                                        .body(Body::from(format!("Couldn't parse path parameter channel_id: {e}")))
+                                        .body(Body::from(format!("Couldn't parse path parameter channel_id: {}", e)))
                                         .expect("Unable to create Bad Request response for invalid path parameter")),
                     },
                     Err(_) => return Ok(Response::builder()
@@ -943,7 +943,7 @@ where
                                         Ok(param_channel_message) => param_channel_message,
                                         Err(e) => return Ok(Response::builder()
                                                         .status(StatusCode::BAD_REQUEST)
-                                                        .body(Body::from(format!("Couldn't parse body parameter ChannelMessage - doesn't match schema: {e}")))
+                                                        .body(Body::from(format!("Couldn't parse body parameter ChannelMessage - doesn't match schema: {}", e)))
                                                         .expect("Unable to create Bad Request response for invalid body parameter ChannelMessage due to schema")),
                                     }
                                 } else {
@@ -971,7 +971,7 @@ where
                                         if !unused_elements.is_empty() {
                                             response.headers_mut().insert(
                                                 HeaderName::from_static("warning"),
-                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {unused_elements:?}").as_str())
+                                                HeaderValue::from_str(format!("Ignoring unknown fields in body: {:?}", unused_elements).as_str())
                                                     .expect("Unable to create Warning header value"));
                                         }
 
@@ -1012,7 +1012,7 @@ where
                             },
                             Err(e) => Ok(Response::builder()
                                                 .status(StatusCode::BAD_REQUEST)
-                                                .body(Body::from(format!("Couldn't read body parameter ChannelMessage: {e}")))
+                                                .body(Body::from(format!("Couldn't read body parameter ChannelMessage: {}", e)))
                                                 .expect("Unable to create Bad Request response due to unable to read body parameter ChannelMessage")),
                         }
                 }
@@ -1033,7 +1033,7 @@ where
                         Ok(param_channel_id) => param_channel_id,
                         Err(e) => return Ok(Response::builder()
                                         .status(StatusCode::BAD_REQUEST)
-                                        .body(Body::from(format!("Couldn't parse path parameter channel_id: {e}")))
+                                        .body(Body::from(format!("Couldn't parse path parameter channel_id: {}", e)))
                                         .expect("Unable to create Bad Request response for invalid path parameter")),
                     },
                     Err(_) => return Ok(Response::builder()

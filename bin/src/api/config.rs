@@ -13,18 +13,14 @@ pub(crate) struct Config {
 }
 
 impl Config {
-    pub fn new() -> Config {
-        compose_config().unwrap()
+    pub fn new() -> Result<Config> {
+        compose_config()
     }
 }
 
 fn compose_config() -> Result<Config> {
     let config = Config {
-        api_config: ApiConfig::new(
-            format!("0.0.0.0:{}", get_var::<u16>("LISTEN_PORT")?)
-                .parse()
-                .unwrap(),
-        ),
+        api_config: ApiConfig::new(format!("0.0.0.0:{}", get_var::<u16>("LISTEN_PORT")?).parse()?),
         mysql_config: MySQLConfig::new(
             get_var("DATABASE_URL")?,
             get_var("DATABASE_MIN_CONNECTIONS")?,

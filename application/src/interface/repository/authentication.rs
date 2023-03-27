@@ -59,18 +59,18 @@ mock! {
     }
     #[async_trait]
     impl AuthenticationRepository<()> for AuthenticationRepository {
-    async fn get_by_mail(&self, ctx: (), mail: String) -> Result<Option<Authentication>>;
-    async fn create(&self, ctx: (), authentication: NewAuthentication) -> Result<()>;
-    async fn update_password(&self, ctx: (), updated: UpdatePassword) -> Result<()>;
-    async fn add_password_reset_code(
-        &self,
-        ctx: (),
-        password_reset_code: PasswordResetCode,
-    ) -> Result<()>;
-    async fn get_password_reset_code(
-        &self,
-        ctx: (),
-        code: String,
-    ) -> Result<Option<PasswordResetCode>>;
+        async fn get_by_mail(&self, ctx: (), mail: String) -> Result<Option<Authentication>>;
+        async fn create(&self, ctx: (), authentication: NewAuthentication) -> Result<()>;
+        async fn update_password(&self, ctx: (), updated: UpdatePassword) -> Result<()>;
+        async fn add_password_reset_code(
+            &self,
+            ctx: (),
+            password_reset_code: PasswordResetCode,
+        ) -> Result<()>;
+        async fn get_password_reset_code(
+            &self,
+            ctx: (),
+            code: String,
+        ) -> Result<Option<PasswordResetCode>>;
     }
 }

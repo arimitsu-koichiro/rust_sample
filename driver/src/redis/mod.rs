@@ -37,20 +37,18 @@ pub trait RedisContext: RedisPrimaryContext + RedisReaderContext {}
 
 impl Redis {
     pub async fn new(config: RedisConfig) -> Result<Redis> {
-        let manager = RedisConnectionManager::new(config.primary_url.clone()).unwrap();
+        let manager = RedisConnectionManager::new(config.primary_url.clone())?;
         let primary = RedisPool::builder()
             .min_idle(config.min_idle)
             .max_size(config.max_size)
             .build(manager)
-            .await
-            .unwrap();
-        let manager = RedisConnectionManager::new(config.reader_url.clone()).unwrap();
+            .await?;
+        let manager = RedisConnectionManager::new(config.reader_url.clone())?;
         let reader = RedisPool::builder()
             .min_idle(config.min_idle)
             .max_size(config.max_size)
             .build(manager)
-            .await
-            .unwrap();
+            .await?;
         Ok(Redis::Pool { primary, reader })
     }
 }

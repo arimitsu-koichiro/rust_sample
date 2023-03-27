@@ -7,6 +7,7 @@ use async_trait::async_trait;
 use log;
 use std::marker::PhantomData;
 use tokio::sync::mpsc::Receiver;
+use tokio_stream::wrappers::ReceiverStream;
 use tokio_stream::StreamExt;
 use trait_set::trait_set;
 
@@ -96,7 +97,7 @@ where
         let _ctx = ctx.clone();
         let gateway = self.deps.pubsub_gateway();
         let mut publish_task = tokio::spawn(async move {
-            let mut stream = tokio_stream::wrappers::ReceiverStream::new(receiver);
+            let mut stream = ReceiverStream::new(receiver);
             while let Some(message) = stream.next().await {
                 if message.is_empty() {
                     continue;
@@ -123,7 +124,7 @@ where
             .subscribe(ctx.clone(), format!("channel:{}", input.channel_id))
             .await?;
         let mut subscribe_task = tokio::spawn(async move {
-            let mut stream = tokio_stream::wrappers::ReceiverStream::new(receiver);
+            let mut stream = ReceiverStream::new(receiver);
             while let Some(msg) = stream.next().await {
                 match sender.send(msg).await {
                     Ok(_) => (),

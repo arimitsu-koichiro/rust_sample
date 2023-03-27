@@ -26,7 +26,7 @@ mock! {
     }
     #[async_trait]
     impl CommentRepository<()> for CommentRepository {
-    async fn get(&self, ctx: (), id: String) -> Result<Option<Comment>>;
-    async fn put(&self, ctx: (), id: String, body: String) -> Result<Option<Comment>>;
+        async fn get(&self, ctx: (), id: String) -> Result<Option<Comment>>;
+        async fn put(&self, ctx: (), id: String, body: String) -> Result<Option<Comment>>;
     }
 }

@@ -46,7 +46,6 @@ pub(crate) struct Modules {
 }
 
 impl Modules {
-    #[allow(clippy::redundant_clone)]
     pub fn new(db: DB, redis: Redis) -> Modules {
         Modules { db, redis }
     }
