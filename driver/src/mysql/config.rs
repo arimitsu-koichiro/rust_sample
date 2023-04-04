@@ -2,7 +2,7 @@ use derive_new::new;
 use std::time::Duration;
 
 #[derive(Clone, new)]
-pub struct MySQLConfig {
+pub struct Config {
     pub(crate) url: String,
     pub(crate) min_connections: u32,
     pub(crate) max_connections: u32,

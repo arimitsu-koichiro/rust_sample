@@ -24,9 +24,52 @@ pub fn from_string<'a, T: Deserialize<'a>>(value: &'a str) -> Result<T> {
 }
 
 pub fn from_bytes<'a, T: Deserialize<'a>>(value: &'a [u8]) -> Result<T> {
-    serde_json::from_slice::<'a, T>(value).with_context(|| "json::helper::from_bytes error")
+    serde_json::from_slice::<'a, T>(value).with_context(|| "json::helper::from_vec error")
 }
 
-pub fn from_vec<'a, T: Deserialize<'a>>(value: &'a [u8]) -> Result<T> {
-    serde_json::from_slice::<'a, T>(value).with_context(|| "json::helper::from_vec error")
+pub trait ToJson<T: Serialize> {
+    fn to_json_string(&self) -> Result<String>;
+    fn to_json_string_pretty(&self) -> Result<String>;
+    fn to_json_vec(&self) -> Result<Vec<u8>>;
+    fn to_json_vec_pretty(&self) -> Result<Vec<u8>>;
+}
+
+impl<T: Serialize> ToJson<T> for T {
+    fn to_json_string(&self) -> Result<String> {
+        to_string(self)
+    }
+
+    fn to_json_string_pretty(&self) -> Result<String> {
+        to_string_pretty(self)
+    }
+
+    fn to_json_vec(&self) -> Result<Vec<u8>> {
+        to_vec(self)
+    }
+
+    fn to_json_vec_pretty(&self) -> Result<Vec<u8>> {
+        to_vec_pretty(self)
+    }
+}
+
+pub trait FromJson {
+    fn deserialize<'a, 'b: 'a, T: Deserialize<'a>>(&'b self) -> Result<T>;
+}
+
+impl FromJson for &str {
+    fn deserialize<'a, 'b: 'a, T: Deserialize<'a>>(&'b self) -> Result<T> {
+        from_string::<T>(self)
+    }
+}
+
+impl FromJson for &[u8] {
+    fn deserialize<'a, 'b: 'a, T: Deserialize<'a>>(&'b self) -> Result<T> {
+        from_bytes::<T>(self)
+    }
+}
+
+impl FromJson for Vec<u8> {
+    fn deserialize<'a, 'b: 'a, T: Deserialize<'a>>(&'b self) -> Result<T> {
+        from_bytes::<T>(self)
+    }
 }

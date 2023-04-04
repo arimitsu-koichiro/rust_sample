@@ -1,22 +1,15 @@
-use crate::aws::with_profile;
-use anyhow::{bail, Result};
-
+use anyhow::bail;
+use aws_sdk_ssm as ssm;
+use helper::env::get_var;
 use kernel::unexpected;
-use rusoto_core::{HttpClient, Region};
-use rusoto_ssm::{Ssm, SsmClient};
+use kernel::Result;
+
+use crate::aws::init_config_loader;
+use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::env;
 
-fn get_client() -> SsmClient {
-    with_profile(|x| match x {
-        Some(provider) => {
-            SsmClient::new_with(HttpClient::new().unwrap(), provider, Region::default())
-        }
-        _ => SsmClient::new(Region::default()),
-    })
-}
-
-pub async fn load_from_ssm(path: String) -> anyhow::Result<()> {
+pub async fn load_from_ssm(path: String) -> Result<()> {
     let ssm_envs = get_parameters_by_path(&path, Some(true), Some(false)).await?;
     for (key, value) in &ssm_envs {
         env::set_var(key.replace(&path, ""), value);
@@ -25,16 +18,15 @@ pub async fn load_from_ssm(path: String) -> anyhow::Result<()> {
 }
 
 pub async fn get_parameter(name: &str, with_decryption: Option<bool>) -> Result<Option<String>> {
-    let client = get_client();
-    match client
-        .get_parameter(rusoto_ssm::GetParameterRequest {
-            name: name.to_string(),
-            with_decryption,
-        })
+    match SSM_CLIENT
+        .get_parameter()
+        .name(name)
+        .set_with_decryption(with_decryption)
+        .send()
         .await
     {
-        Ok(result) => match result.parameter {
-            Some(param) => Ok(param.value),
+        Ok(result) => match result.parameter() {
+            Some(param) => Ok(param.value().map(Into::into)),
             None => Ok(None),
         },
         Err(e) => bail!(unexpected!("ssm get_parameter error {:?}", e)),
@@ -46,24 +38,23 @@ pub async fn get_parameters_by_path(
     with_decryption: Option<bool>,
     recursive: Option<bool>,
 ) -> Result<HashMap<String, String>> {
-    let client = get_client();
-    match client
-        .get_parameters_by_path(rusoto_ssm::GetParametersByPathRequest {
-            path: path.to_string(),
-            recursive,
-            with_decryption,
-            parameter_filters: None,
-            max_results: None,
-            next_token: None,
-        })
+    match SSM_CLIENT
+        .get_parameters_by_path()
+        .path(path)
+        .set_with_decryption(with_decryption)
+        .set_recursive(recursive)
+        .set_parameter_filters(None)
+        .set_max_results(None)
+        .set_next_token(None)
+        .send()
         .await
     {
-        Ok(result) => match result.parameters {
+        Ok(result) => match result.parameters() {
             Some(params) => {
-                let mut result = HashMap::new();
+                let mut result: HashMap<String, String> = HashMap::new();
                 for param in params {
-                    if let (Some(name), Some(value)) = (param.name, param.value) {
-                        result.insert(name, value);
+                    if let (Some(name), Some(value)) = (param.name(), param.value()) {
+                        result.insert(name.into(), value.into());
                     }
                 }
                 Ok(result)
@@ -73,3 +64,10 @@ pub async fn get_parameters_by_path(
         Err(e) => bail!(unexpected!("ssm get_parameter error. {:?}", e)),
     }
 }
+
+static SSM_CLIENT: Lazy<ssm::Client> = Lazy::new(|| {
+    let config = futures::executor::block_on(
+        init_config_loader(get_var::<String>("SSM_ENDPOINT_URL").ok()).load(),
+    );
+    ssm::Client::new(&config)
+});

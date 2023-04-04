@@ -8,15 +8,17 @@ kernel = { path = "../kernel" }
 helper = { path = "../helper" }
 async-trait = "0.1.68"
 anyhow = { version = "1.0.70", features = ["backtrace"] }
-tokio = {version = "1.26.0", features = ["full"]}
+tokio = {version = "1.27.0", features = ["full"]}
 tokio-stream = "0.1.12"
 log = "0.4.17"
 derive-new = "0.5.9"
-serde = "1.0.158"
+serde = "1.0.159"
 chrono = "0.4.24"
 marker-blanket = "0.1.0"
 blanket = "0.2.0"
 trait-set = "0.3.0"
+validator = "0.16.0"
+derive_builder = "0.12.0"
 
 [dev-dependencies]
-mockall = "0.11.3"
+mockall = "0.11.4"

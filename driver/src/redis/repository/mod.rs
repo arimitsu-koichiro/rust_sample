@@ -4,6 +4,7 @@ pub mod authentication {
     use application::interface::repository::authentication::PasswordResetCode;
 
     use helper::env::get_var;
+    use helper::json::{FromJson, ToJson};
     use kernel::{unexpected, Result};
     use redis::AsyncCommands;
 
@@ -15,7 +16,7 @@ pub mod authentication {
 
         conn.set_ex(
             compose_key("password_reset_code", &password_reset_code.code),
-            helper::json::to_vec(&password_reset_code)?.as_slice(),
+            password_reset_code.to_json_vec()?.as_slice(),
             get_var("PASSWORD_RESET_CODE_EXPIRE")?,
         )
         .await
@@ -31,7 +32,7 @@ pub mod authentication {
             .await
             .ok()
         {
-            Some(x) => Ok(Some(helper::json::from_vec::<PasswordResetCode>(&x)?)),
+            Some(x) => Ok(Some(x.deserialize()?)),
             None => Ok(None),
         }
     }
@@ -42,6 +43,7 @@ pub mod session {
 
     use kernel::entity::{ProvisionalSession, Session};
 
+    use helper::json::{FromJson, ToJson};
     use kernel::{unexpected, Result};
     use redis::AsyncCommands;
 
@@ -52,7 +54,7 @@ pub mod session {
         let mut conn = ctx.primary().await?;
         conn.set(
             compose_key("preregister", &session.code),
-            helper::json::to_vec(&session)?.as_slice(),
+            session.to_json_vec()?.as_slice(),
         )
         .await
         .with_context(|| unexpected!("set_provisional_session error"))
@@ -66,13 +68,14 @@ pub mod session {
             .get::<_, Vec<u8>>(compose_key("preregister", &id))
             .await
             .with_context(|| unexpected!("get_provisional_session error"))?;
-        Ok(Some(helper::json::from_vec::<ProvisionalSession>(&x)?))
+
+        Ok(Some(x.deserialize()?))
     }
     pub async fn set(ctx: impl RedisPrimaryContext, session: Session) -> Result<()> {
         let mut conn = ctx.primary().await?;
         conn.set(
             compose_key("session", &session.id),
-            helper::json::to_vec(&session)?.as_slice(),
+            session.to_json_vec()?.as_slice(),
         )
         .await
         .with_context(|| unexpected!("session set error"))
@@ -84,7 +87,7 @@ pub mod session {
             .get::<_, Vec<u8>>(compose_key("session", &id))
             .await
             .with_context(|| unexpected!("session get error"))?;
-        Ok(Some(helper::json::from_vec::<Session>(&x)?))
+        Ok(Some(x.deserialize()?))
     }
     pub async fn delete(ctx: impl RedisPrimaryContext, id: String) -> Result<()> {
         let mut conn = ctx.primary().await?;

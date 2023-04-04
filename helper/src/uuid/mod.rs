@@ -21,6 +21,6 @@ pub fn new_ulid() -> ulid::Ulid {
 
 impl ToBase62 for ulid::Ulid {
     fn to_base62(&self) -> String {
-        base62::encode(self.0)
+        base62::encode(*self)
     }
 }

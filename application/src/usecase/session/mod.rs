@@ -29,8 +29,8 @@ where
 {
     async fn handle(&self, input: GetSessionInput) -> Result<GetSessionOutput> {
         let session = internal::session::get_session(
-            self.deps.context().await?,
             self.deps.session_repository(),
+            self.deps.context().await?,
             input.session_id,
         )
         .await?;

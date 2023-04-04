@@ -8,14 +8,14 @@ kernel = { path = "../kernel" }
 helper = { path = "../helper" }
 application = { path = "../application" }
 driver = { path = "../driver"  }
-tokio = { version = "1.26.0" }
+tokio = { version = "1.27.0" }
 tracing-subscriber = { version = "0.3.16", features = ["std", "registry", "env-filter", "ansi", "json"] }
 anyhow = { version = "1.0.70", features = ["backtrace"] }
 dotenv = "0.15.0"
 async-trait = "0.1.68"
 derive-new = "0.5.9"
-clap = "4.1.13"
-serde_json = {version = "1.0.94", features = ["default"]}
+clap = "4.2.1"
+serde_json = {version = "1.0.95", features = ["default"]}
 chrono = "0.4.24"
 
 [[bin]]

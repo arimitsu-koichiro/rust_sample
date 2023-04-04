@@ -7,7 +7,7 @@ use derive_new::new;
 use driver::adapter::gateway::pubsub::PubSubGatewayImpl;
 use driver::aws::ssm::load_from_ssm;
 use driver::cli::presenter::logging::LoggingPresenter;
-use driver::redis::config::RedisConfig;
+use driver::redis::config::Config as RedisConfig;
 use driver::redis::{
     PooledRedisConnection, Redis, RedisConnection, RedisConnectionManager, RedisPrimaryContext,
     RedisReaderContext,
@@ -94,14 +94,14 @@ impl RedisReaderContext for Context {
 
 mod log {
     use helper::env::get_var_or;
-    use tracing_subscriber::layer::SubscriberExt;
-    use tracing_subscriber::util::SubscriberInitExt;
+    use tracing_subscriber::prelude::*;
+    use tracing_subscriber::{filter, fmt, registry};
 
     pub fn init() {
-        tracing_subscriber::registry()
-            .with(tracing_subscriber::filter::LevelFilter::INFO)
+        registry()
+            .with(filter::LevelFilter::INFO)
             .with(
-                tracing_subscriber::fmt::Layer::default()
+                fmt::Layer::default()
                     .with_line_number(true)
                     .with_file(true)
                     .with_ansi(get_var_or("LOG_COLOR", true)),
@@ -117,17 +117,14 @@ struct Config {
 
 impl Config {
     pub fn new() -> Result<Config> {
-        compose_config()
+        let config = Config {
+            redis_config: RedisConfig::new(
+                get_var("REDIS_PRIMARY_URL")?,
+                get_var("REDIS_READER_URL")?,
+                Some(get_var("REDIS_MIN_IDLE")?),
+                get_var("REDIS_MAX_SIZE")?,
+            ),
+        };
+        Ok(config)
     }
-}
-fn compose_config() -> Result<Config> {
-    let config = Config {
-        redis_config: RedisConfig::new(
-            get_var("REDIS_PRIMARY_URL")?,
-            get_var("REDIS_READER_URL")?,
-            Some(get_var("REDIS_MIN_IDLE")?),
-            get_var("REDIS_MAX_SIZE")?,
-        ),
-    };
-    Ok(config)
 }

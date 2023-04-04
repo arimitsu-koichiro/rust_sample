@@ -1,7 +1,9 @@
+use crate::interface::config::Config;
 use async_trait::async_trait;
 use kernel::Result;
 use trait_set::trait_set;
 
+pub mod config;
 pub mod gateway;
 pub mod repository;
 
@@ -14,4 +16,8 @@ trait_set! {
 pub trait UseContext {
     type Context;
     async fn context(&self) -> Result<Self::Context>;
+}
+
+pub trait UseConfig {
+    fn config(&self) -> Config;
 }

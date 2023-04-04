@@ -1,9 +1,12 @@
-use crate::http::server::api::{Mods, ServerPresenter};
+use crate::http::server::api::{Mods, Presenter};
+use crate::http::server::middleware::session::RequireSession;
 use crate::{dispatch, dispatch_with};
 use application::usecase::channel::{PubSubInput, PublishInput, SubscribeInput};
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{Path, State, WebSocketUpgrade};
 use axum::response::Response;
+use axum::routing::{get, post};
+use axum::Router;
 use futures::{SinkExt, StreamExt};
 use helper::uuid;
 use helper::uuid::ToBase62;
@@ -15,36 +18,42 @@ use tokio::sync::mpsc::channel;
 use tokio::sync::Mutex;
 use tokio_stream::wrappers::ReceiverStream;
 
-pub(crate) async fn channel_socket<M: Mods<P>, P: ServerPresenter>(
+pub(crate) fn route<M: Mods<P>, P: Presenter>(_: M) -> Router<M> {
+    Router::new()
+        .route("/channel/:channel_id", get(subscribe_channel::<M, P>))
+        .route("/channel/:channel_id", post(publish_channel::<M, P>))
+        .route("/channel/:channel_id/socket", get(channel_socket::<M, P>))
+}
+
+async fn channel_socket<M: Mods<P>, P: Presenter>(
     State(mods): State<M>,
     Path(channel_id): Path<String>,
+    RequireSession(_): RequireSession,
     ws: WebSocketUpgrade,
 ) -> Response {
     ws.protocols(["x-protocol"])
         .on_upgrade(move |socket| async { handle_socket(mods, channel_id, socket).await })
 }
 
-pub(crate) async fn subscribe_channel<M: Mods<P>, P: ServerPresenter>(
+async fn subscribe_channel<M: Mods<P>, P: Presenter>(
     State(mods): State<M>,
     Path(channel_id): Path<String>,
+    RequireSession(_): RequireSession,
 ) -> Result<Response, ()> {
     dispatch(SubscribeInput::new(channel_id), mods).await
 }
 
-pub(crate) async fn publish_channel<M: Mods<P>, P: ServerPresenter>(
+async fn publish_channel<M: Mods<P>, P: Presenter>(
     State(mods): State<M>,
     Path(channel_id): Path<String>,
+    RequireSession(_): RequireSession,
     message: String,
 ) -> Result<Response, ()> {
     let input = PublishInput::new(channel_id, message.as_bytes().to_vec());
     dispatch(input, mods).await
 }
 
-async fn handle_socket<M: Mods<P>, P: ServerPresenter>(
-    mods: M,
-    channel_id: String,
-    socket: WebSocket,
-) {
+async fn handle_socket<M: Mods<P>, P: Presenter>(mods: M, channel_id: String, socket: WebSocket) {
     let (outbound, mut inbound) = socket.split();
     let outbound = Arc::new(Mutex::new(outbound));
     let (exchange_sender, receiver) = channel::<Vec<u8>>(1000);

@@ -2,7 +2,6 @@ pub mod account {
     use crate::mysql::dsl::{col, cond, tbl, Expr, MysqlQueryBuilder, Query};
     use crate::mysql::MySQLContext;
     use anyhow::Context;
-    use application::interface::repository::account::NewAccount;
     use chrono::{DateTime, Utc};
     use kernel::Result;
     use kernel::{entity, unexpected};
@@ -17,14 +16,23 @@ pub mod account {
         query_account_with(db, query, values).await
     }
 
-    pub async fn create(db: impl MySQLContext, new_account: NewAccount) -> Result<entity::Account> {
+    pub async fn create(
+        db: impl MySQLContext,
+        new_account: entity::Account,
+    ) -> Result<entity::Account> {
         let (query, values) = Query::insert()
             .into_table(tbl("account"))
-            .columns(vec![col("id"), col("name"), col("display_name")])
+            .columns(vec![
+                col("id"),
+                col("name"),
+                col("display_name"),
+                col("create_time"),
+            ])
             .values(vec![
                 new_account.id.clone().into(),
                 new_account.name.clone().into(),
                 new_account.display_name.clone().into(),
+                new_account.create_time.into(),
             ])?
             .build_sqlx(MysqlQueryBuilder);
         match sqlx::query_with(&query, values)
@@ -36,7 +44,7 @@ pub mod account {
                 new_account.id,
                 new_account.name,
                 new_account.display_name,
-                DateTime::default(),
+                new_account.create_time,
             )),
         }
     }
@@ -64,12 +72,12 @@ pub mod account {
 
     impl From<Account> for entity::Account {
         fn from(record: Account) -> Self {
-            entity::Account {
-                id: record.id,
-                name: record.name,
-                display_name: record.display_name,
-                create_time: record.create_time,
-            }
+            entity::Account::new(
+                record.id,
+                record.name,
+                record.display_name,
+                record.create_time,
+            )
         }
     }
 }
@@ -78,7 +86,7 @@ pub mod authentication {
     use crate::mysql::dsl::{col, cond, tbl, Expr, MysqlQueryBuilder, Query};
     use crate::mysql::MySQLContext;
     use anyhow::Context;
-    use application::interface::repository::authentication::{NewAuthentication, UpdatePassword};
+    use application::interface::repository::authentication::UpdatePassword;
     use kernel::Result;
     use kernel::{entity, unexpected};
     use sea_query_binder::SqlxBinder;
@@ -102,7 +110,7 @@ pub mod authentication {
     }
     pub async fn create(
         db: impl MySQLContext,
-        new_authentication: NewAuthentication,
+        new_authentication: entity::Authentication,
     ) -> Result<()> {
         let (query, values) = Query::insert()
             .into_table(tbl("authentication"))
@@ -116,7 +124,7 @@ pub mod authentication {
                 new_authentication.account_id.into(),
                 new_authentication.mail.into(),
                 new_authentication.salt.into(),
-                new_authentication.password.into(),
+                new_authentication.password_hash.into(),
             ])?
             .build_sqlx(MysqlQueryBuilder);
         match sqlx::query_with(&query, values)
@@ -153,12 +161,12 @@ pub mod authentication {
 
     impl From<Authentication> for entity::Authentication {
         fn from(record: Authentication) -> Self {
-            entity::Authentication {
-                account_id: record.account_id,
-                mail: record.mail,
-                salt: record.salt,
-                password: record.password,
-            }
+            entity::Authentication::new(
+                record.account_id,
+                record.mail,
+                record.salt,
+                record.password,
+            )
         }
     }
 }
@@ -168,6 +176,7 @@ pub mod comment {
     use crate::mysql::MySQLContext;
     use anyhow::Context;
     use chrono::{DateTime, Utc};
+    use helper::time::current_time;
     use kernel::Result;
     use kernel::{entity, unexpected};
     use sea_query_binder::SqlxBinder;
@@ -192,25 +201,18 @@ pub mod comment {
         id: String,
         body: String,
     ) -> Result<Option<entity::Comment>> {
+        let now = current_time();
         let (query, values) = Query::insert()
             .into_table(tbl("comment"))
             .columns(vec![col("id"), col("body"), col("create_time")])
-            .values(vec![
-                id.clone().into(),
-                body.clone().into(),
-                DateTime::<Utc>::default().into(),
-            ])?
+            .values(vec![id.clone().into(), body.clone().into(), now.into()])?
             .build_sqlx(MysqlQueryBuilder);
         match sqlx::query_with(&query, values)
             .execute(&mut *db.acquire().await?.lock().await)
             .await
         {
             Err(err) => Err(err).with_context(|| unexpected!("comment put error")),
-            Ok(_) => Ok(Some(entity::Comment::new(
-                id,
-                body,
-                DateTime::<Utc>::default(),
-            ))),
+            Ok(_) => Ok(Some(entity::Comment::new(id, body, now))),
         }
     }
 
@@ -222,11 +224,7 @@ pub mod comment {
     }
     impl From<Comment> for entity::Comment {
         fn from(record: Comment) -> Self {
-            entity::Comment {
-                id: record.id,
-                body: record.body,
-                create_time: record.create_time,
-            }
+            entity::Comment::new(record.id, record.body, record.create_time)
         }
     }
 }

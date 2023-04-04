@@ -1,5 +1,5 @@
 use crate::http::server::response::{constants, response_with_code, WithSetCookie};
-use crate::{Present, Presenter};
+use crate::Present;
 use ::openapi::models::{Account, ErrorMessage, StatusOk, StatusResponse};
 use application::usecase::account::GetAccountOutput;
 use application::usecase::auth::{
@@ -27,8 +27,6 @@ use tokio_stream::wrappers::ReceiverStream;
 
 #[derive(Clone, Default)]
 pub struct OpenAPIServerPresenter;
-
-impl Presenter for OpenAPIServerPresenter {}
 
 #[async_trait]
 impl Present<Result<StatusOutput>> for OpenAPIServerPresenter {
@@ -146,7 +144,7 @@ fn present_status_output(data: Result<StatusOutput>) -> Response {
             s.version.unwrap_or_else(|| "-".to_string()),
             s.build_timestamp,
         )),
-        Err(e) => convert_server_error(e),
+        Err(e) => convert_server_error(&e),
     }
 }
 
@@ -158,7 +156,7 @@ fn present_get_account_output(data: Result<GetAccountOutput>) -> Response {
             };
             ok_response_with_message(Account::new(account.id, account.name, account.display_name))
         }
-        Err(e) => convert_server_error(e),
+        Err(e) => convert_server_error(&e),
     }
 }
 
@@ -176,7 +174,7 @@ fn present_signin_output(data: Result<SignInOutput>) -> Response {
             };
             status_ok_response().with_cookie(set_session_cookie(session_id, max_age))
         }
-        Err(e) => convert_server_error(e),
+        Err(e) => convert_server_error(&e),
     }
 }
 
@@ -186,19 +184,19 @@ fn present_signup_finish_output(data: Result<SignUpFinishOutput>) -> Response {
             let SignUpFinishOutput { session_id } = output;
             status_ok_response().with_cookie(set_session_cookie(session_id, None))
         }
-        Err(e) => convert_server_error(e),
+        Err(e) => convert_server_error(&e),
     }
 }
 fn present_signout_output(data: Result<SignOutOutput>) -> Response {
     match data {
         Ok(_) => status_ok_response().with_cookie(delete_session_cookie()),
-        Err(e) => convert_server_error(e),
+        Err(e) => convert_server_error(&e),
     }
 }
 fn present_forget_password_output(data: Result<ForgetPasswordOutput>) -> Response {
     match data {
         Ok(_) => status_ok_response().with_cookie(delete_session_cookie()),
-        Err(e) => convert_server_error(e),
+        Err(e) => convert_server_error(&e),
     }
 }
 fn present_subscribe_output(data: Result<SubscribeOutput>) -> Response {
@@ -226,37 +224,37 @@ fn present_subscribe_output(data: Result<SubscribeOutput>) -> Response {
                 )
                 .into_response()
         }
-        Err(e) => convert_server_error(e),
+        Err(e) => convert_server_error(&e),
     }
 }
 
 fn present_status_ok<A>(data: Result<A>) -> Response {
     match data {
         Ok(_) => status_ok_response(),
-        Err(e) => convert_server_error(e),
+        Err(e) => convert_server_error(&e),
     }
 }
 
-fn convert_server_error(err: anyhow::Error) -> Response {
-    if let Some(usecase_err) = err.downcast_ref::<kernel::error::Error>() {
+fn convert_server_error(err: &anyhow::Error) -> Response {
+    if let Some(usecase_err) = err.downcast_ref::<kernel::Error>() {
         match usecase_err {
-            kernel::error::Error::BadRequest(type_code, message) => {
+            kernel::Error::BadRequest(type_code, message) => {
                 log::warn!("{}", err);
                 bad_request(type_code, message.clone())
             }
-            kernel::error::Error::Unauthorized(type_code, message) => {
+            kernel::Error::Unauthorized(type_code, message) => {
                 log::warn!("{}", err);
                 unauthorized(type_code, message.clone())
             }
-            kernel::error::Error::Forbidden(type_code, message) => {
+            kernel::Error::Forbidden(type_code, message) => {
                 log::warn!("{}", err);
                 forbidden(type_code, message.clone())
             }
-            kernel::error::Error::NotFound(type_code, message) => {
+            kernel::Error::NotFound(type_code, message) => {
                 log::warn!("{}", err);
                 not_found(type_code, message.clone())
             }
-            kernel::error::Error::Unexpected(type_code, message) => {
+            kernel::Error::Unexpected(type_code, message) => {
                 log::error!("{:?}", err);
                 internal_server_error(type_code, message.clone())
             }

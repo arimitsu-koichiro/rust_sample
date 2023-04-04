@@ -1,8 +1,9 @@
 use std::fmt::Debug;
 
 use crate::mysql::MySQLContext;
-use application::interface::repository::account::{AccountRepository, NewAccount};
+use application::interface::repository::account::AccountRepository;
 use async_trait::async_trait;
+use helper::validation::Validation;
 use kernel::entity;
 use kernel::Result;
 
@@ -18,7 +19,7 @@ where
         crate::mysql::repository::account::get(ctx, id).await
     }
 
-    async fn create(&self, ctx: Context, new_account: NewAccount) -> Result<entity::Account> {
-        crate::mysql::repository::account::create(ctx, new_account).await
+    async fn create(&self, ctx: Context, new_account: entity::Account) -> Result<entity::Account> {
+        crate::mysql::repository::account::create(ctx, new_account.validate()?).await
     }
 }

@@ -4,6 +4,7 @@ use blanket::blanket;
 use kernel::Result;
 #[cfg(test)]
 use mockall::mock;
+use validator::Validate;
 
 #[async_trait]
 #[blanket(derive(Arc))]
@@ -16,9 +17,11 @@ pub trait UseMailGateway<Context> {
     fn mail_gateway(&self) -> Self::Gateway;
 }
 
-#[derive(new)]
+#[derive(new, Validate)]
 pub struct SendEmailInput {
+    #[validate(email)]
     pub from_address: String,
+    #[validate(email)]
     pub to_address: String,
     pub subject: String,
     pub body: String,

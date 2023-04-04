@@ -10,8 +10,6 @@ pub mod http;
 pub mod mysql;
 pub mod redis;
 
-pub trait Presenter {}
-
 #[async_trait]
 pub trait Present<D, Attachment = ()> {
     type Output;
@@ -19,7 +17,7 @@ pub trait Present<D, Attachment = ()> {
 }
 
 pub trait UsePresenter {
-    type Presenter: Presenter;
+    type Presenter;
     fn presenter(&self) -> Self::Presenter;
 }
 

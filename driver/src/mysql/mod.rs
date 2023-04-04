@@ -1,4 +1,4 @@
-use crate::mysql::config::MySQLConfig;
+use crate::mysql::config::Config;
 use anyhow::{Context as _, Result};
 use application::interface::repository::Transaction;
 use application::interface::{Component, UseContext};
@@ -52,8 +52,7 @@ impl Drop for DB {
         match self {
             DB::Pool(_) => (),
             DB::Conn(conn) => {
-                let conn = conn.clone();
-                tokio::task::spawn(DB::rollback(conn));
+                tokio::task::spawn(DB::rollback(conn.clone()));
             }
         }
     }
@@ -66,7 +65,7 @@ impl MySQLContext for DB {
 }
 
 impl DB {
-    pub async fn new(config: MySQLConfig) -> Result<DB> {
+    pub async fn new(config: Config) -> Result<DB> {
         let db_pool = MySqlPoolOptions::new()
             .min_connections(config.min_connections)
             .max_connections(config.max_connections)
@@ -91,9 +90,11 @@ impl DB {
         Ok(DB::Conn(conn))
     }
 
-    async fn rollback(conn: Arc<Mutex<PoolConnection<MySql>>>) -> Result<DB> {
-        <MySql as sqlx::Database>::TransactionManager::start_rollback(&mut *conn.lock().await);
-        Ok(DB::Conn(conn))
+    async fn rollback(conn: Arc<Mutex<PoolConnection<MySql>>>) -> Result<()> {
+        <MySql as sqlx::Database>::TransactionManager::rollback(&mut *conn.lock().await)
+            .await
+            .with_context(|| unexpected!("rollback error"))?;
+        Ok(())
     }
     pub async fn acquire(&self) -> Result<Arc<Mutex<PoolConnection<MySql>>>> {
         match self {

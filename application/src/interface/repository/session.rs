@@ -46,7 +46,7 @@ mock! {
             &self,
             ctx: (),
             id: String,
-        ) -> Result<Option<ProvisionalSession>>;
+        ) -> Result<Option<ProvisionalSession >>;
         async fn set(&self, ctx: (), session: Session) -> Result<()>;
         async fn get(&self, ctx: (), id: String) -> Result<Option<Session>>;
         async fn delete(&self, ctx: (), id: String) -> Result<()>;

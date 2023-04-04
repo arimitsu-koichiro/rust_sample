@@ -1,3 +1,4 @@
+use application::interface::config::Config;
 use application::interface::gateway::mail::UseMailGateway;
 use application::interface::gateway::pubsub::UsePubSubGateway;
 use application::interface::repository::account::UseAccountRepository;
@@ -5,7 +6,7 @@ use application::interface::repository::authentication::UseAuthenticationReposit
 use application::interface::repository::comment::UseCommentRepository;
 use application::interface::repository::session::UseSessionRepository;
 use application::interface::repository::Transaction;
-use application::interface::UseContext;
+use application::interface::{UseConfig, UseContext};
 use application::usecase::account::{GetAccountInput, GetAccountOutput, GetAccountUseCase};
 use application::usecase::auth::{
     ForgetPasswordInput, ForgetPasswordOutput, ForgetPasswordUseCase, GetAuthStatusInput,
@@ -22,6 +23,7 @@ use application::usecase::session::{GetSessionInput, GetSessionOutput, GetSessio
 use application::usecase::status::{StatusInput, StatusOutput, StatusUseCase};
 use application::usecase::UseUseCase;
 use async_trait::async_trait;
+use derive_new::new;
 use driver::adapter::gateway::mail::{SesContext, SesMailGateway};
 use driver::adapter::gateway::pubsub::PubSubGatewayImpl;
 use driver::adapter::repository::account::AccountRepositoryImpl;
@@ -35,25 +37,21 @@ use driver::redis::{
     RedisReaderContext,
 };
 use driver::UsePresenter;
+
 use kernel::Result;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-#[derive(Clone)]
+#[derive(Clone, new)]
 pub(crate) struct Modules {
-    pub(crate) db: DB,
-    pub(crate) redis: Redis,
-}
-
-impl Modules {
-    pub fn new(db: DB, redis: Redis) -> Modules {
-        Modules { db, redis }
-    }
+    cfg: Config,
+    db: DB,
+    redis: Redis,
 }
 
 #[derive(Clone)]
 pub(crate) struct Context {
-    db: DB,
+    db: Arc<DB>,
     redis: Redis,
 }
 
@@ -61,14 +59,14 @@ pub(crate) struct Context {
 impl Transaction for Context {
     async fn begin(&self) -> Result<Context> {
         Ok(Context {
-            db: self.db.begin().await?,
+            db: Arc::new(self.db.begin().await?),
             redis: self.redis.clone(),
         })
     }
 
     async fn commit(&self) -> Result<Context> {
         Ok(Context {
-            db: self.db.commit().await?,
+            db: Arc::new(self.db.commit().await?),
             redis: self.redis.clone(),
         })
     }
@@ -102,13 +100,19 @@ impl RedisReaderContext for Context {
 #[async_trait]
 impl SesContext for Context {}
 
+impl UseConfig for Modules {
+    fn config(&self) -> Config {
+        self.cfg.clone()
+    }
+}
+
 #[async_trait]
 impl UseContext for Modules {
     type Context = Context;
 
     async fn context(&self) -> Result<Self::Context> {
         Ok(Context {
-            db: self.db.clone(),
+            db: Arc::new(self.db.clone()),
             redis: self.redis.clone(),
         })
     }
@@ -165,7 +169,7 @@ impl UsePresenter for Modules {
     type Presenter = OpenAPIServerPresenter;
 
     fn presenter(&self) -> Self::Presenter {
-        OpenAPIServerPresenter::default()
+        OpenAPIServerPresenter
     }
 }
 

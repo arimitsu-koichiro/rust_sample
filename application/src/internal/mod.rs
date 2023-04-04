@@ -1,55 +1,57 @@
 pub mod session {
+    use crate::interface::config::Config;
     use crate::interface::repository::session::SessionRepository;
+    use helper::auth::stretch_password;
+    use helper::time::current_time;
+    use helper::uuid;
     use helper::uuid::ToBase62;
-    use kernel::entity::{Account, ProvisionalSession, Session};
+    use helper::validation::Validation;
+    use kernel::entity::{Account, ProvisionalAuthentication, ProvisionalSession, Session};
     use kernel::Result;
+
     pub async fn new_session<C>(
-        ctx: C,
         repo: impl SessionRepository<C>,
+        ctx: C,
         account: Account,
     ) -> Result<Session> {
-        let id = helper::uuid::new_v4().to_base62();
-        let time = helper::time::current_time();
-        let session = Session {
-            id: id.to_string(),
-            account,
-            create_time: time,
-        };
+        let id = uuid::new_v4().to_base62();
+        let session = Session::new(id.to_string(), account, current_time()).validate()?;
         repo.set(ctx, session.clone()).await?;
         Ok(session)
     }
     pub async fn get_session<C>(
-        ctx: C,
         repo: impl SessionRepository<C>,
+        ctx: C,
         id: String,
     ) -> Result<Option<Session>> {
         repo.get(ctx, id).await
     }
     pub async fn invalidate_session<C>(
-        ctx: C,
         repo: impl SessionRepository<C>,
+        ctx: C,
         id: String,
     ) -> Result<()> {
         repo.delete(ctx, id).await
     }
-    pub async fn new_preregister_session<C>(
-        ctx: C,
+    pub async fn new_provisional_account_session<C>(
+        cfg: &Config,
         repo: impl SessionRepository<C>,
+        ctx: C,
         mail: String,
         password: String,
     ) -> Result<ProvisionalSession> {
-        let code = helper::uuid::new_v4().to_base62();
-        let session = ProvisionalSession {
-            code,
-            mail,
-            password,
-        };
+        let code = uuid::new_v4().to_base62();
+        let salt = uuid::new_v4().to_base62();
+        let password_hash =
+            stretch_password(&password, &salt, &cfg.auth.pepper, cfg.auth.stretch_count)?;
+        let auth = ProvisionalAuthentication::new(mail, salt, password_hash).validate()?;
+        let session = ProvisionalSession::new(code, auth).validate()?;
         repo.set_provisional_session(ctx, session.clone()).await?;
         Ok(session)
     }
-    pub async fn get_preregister_session<C>(
-        ctx: C,
+    pub async fn get_provisional_account_session<C>(
         repo: impl SessionRepository<C>,
+        ctx: C,
         id: String,
     ) -> Result<Option<ProvisionalSession>> {
         repo.get_provisional_session(ctx, id).await
@@ -57,62 +59,70 @@ pub mod session {
 }
 
 pub mod auth {
-    use crate::interface::repository::account::{AccountRepository, NewAccount};
+    use crate::interface::config::Config;
+    use crate::interface::repository::account::AccountRepository;
     use crate::interface::repository::authentication::AuthenticationRepository;
-    use crate::interface::{repository, Component};
+    use crate::interface::Component;
     use anyhow::bail;
     use helper::auth::stretch_password;
+    use helper::time::current_time;
     use helper::uuid;
     use helper::uuid::ToBase62;
-    use kernel::entity::Account;
+    use helper::validation::Validation;
+    use kernel::entity::{Account, Authentication, ProvisionalAuthentication};
     use kernel::error::Codes;
     use kernel::Result;
     use kernel::{forbidden, unexpected};
 
     pub async fn signup_account<C: Component>(
-        db: C,
         account_repo: impl AccountRepository<C>,
         auth_repo: impl AuthenticationRepository<C>,
-        mail: String,
-        password: String,
+        ctx: C,
+        ProvisionalAuthentication {
+            mail,
+            salt,
+            password_hash,
+        }: ProvisionalAuthentication,
     ) -> Result<Account> {
         let id = uuid::new_v4().to_base62();
-        let salt = uuid::new_v4().to_base62();
-        let new_account = NewAccount {
-            id: id.to_string(),
-            name: id.to_string(),
-            display_name: id.to_string(),
-        };
-        let account = account_repo.create(db.clone(), new_account.clone()).await?;
-        let new_auth = repository::authentication::NewAuthentication {
-            account_id: id.to_string(),
-            mail,
-            salt: salt.to_string(),
-            password: stretch_password(&password, &salt)?,
-        };
-        auth_repo.create(db.clone(), new_auth).await?;
+        let new_account = Account::new(
+            id.to_string(),
+            id.to_string(),
+            id.to_string(),
+            current_time(),
+        )
+        .validate()?;
+        let account = account_repo.create(ctx.clone(), new_account).await?;
+        let new_auth = Authentication::new(id.clone(), mail, salt, password_hash).validate()?;
+        auth_repo.create(ctx.clone(), new_auth).await?;
         Ok(account)
     }
 
     pub async fn signin_account<C: Component>(
-        db: C,
-        repo: impl AccountRepository<C>,
+        cfg: &Config,
+        account_repo: impl AccountRepository<C>,
         auth_repo: impl AuthenticationRepository<C>,
+        ctx: C,
         mail: String,
         password: String,
     ) -> Result<Account> {
-        let Some(authentication) = auth_repo.get_by_mail(db.clone(), mail.to_string()).await? else {
-            let _ = stretch_password(&password, "dummy")?; // dummy stretching.
+        let Some(authentication) = auth_repo.get_by_mail(ctx.clone(), mail.to_string()).await? else {
+            let _ = stretch_password(&password, "dummy", &cfg.auth.pepper, cfg.auth.stretch_count)?; // dummy stretching.
             bail!(forbidden!("inputs: {}/{}", mail, password)
                 .with_codes(Codes::InvalidEmailOrPassword))
         };
 
-        let hash = stretch_password(&password, &authentication.salt)?;
-        if hash != authentication.password {
+        let hash = stretch_password(
+            &password,
+            &authentication.salt,
+            &cfg.auth.pepper,
+            cfg.auth.stretch_count,
+        )?;
+        if hash != authentication.password_hash {
             bail!(forbidden!("inputs: {}/{}", mail, password)
                 .with_codes(Codes::InvalidEmailOrPassword))
         }
-        let Some(account) = repo.get(db.clone(), authentication.account_id).await? else {
+        let Some(account) = account_repo.get(ctx.clone(), authentication.account_id).await? else {
             bail!(unexpected!("Account NotFound"))
         };
         Ok(account)

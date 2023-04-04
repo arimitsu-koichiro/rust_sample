@@ -2,6 +2,7 @@ use crate::redis::RedisContext;
 use application::interface::repository::session::SessionRepository;
 use async_trait::async_trait;
 use derive_new::new;
+use helper::validation::Validation;
 use kernel::entity::{ProvisionalSession, Session};
 use kernel::Result;
 
@@ -18,7 +19,7 @@ where
         ctx: Context,
         session: ProvisionalSession,
     ) -> Result<()> {
-        crate::redis::repository::session::set_provisional_session(ctx, session).await
+        crate::redis::repository::session::set_provisional_session(ctx, session.validate()?).await
     }
     async fn get_provisional_session(
         &self,
@@ -28,7 +29,7 @@ where
         crate::redis::repository::session::get_provisional_session(ctx, id).await
     }
     async fn set(&self, ctx: Context, session: Session) -> Result<()> {
-        crate::redis::repository::session::set(ctx, session).await
+        crate::redis::repository::session::set(ctx, session.validate()?).await
     }
 
     async fn get(&self, ctx: Context, id: String) -> Result<Option<Session>> {

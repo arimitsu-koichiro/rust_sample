@@ -6,12 +6,13 @@ use kernel::Result;
 #[cfg(test)]
 use mockall::mock;
 use serde::{Deserialize, Serialize};
+use validator::Validate;
 
 #[async_trait]
 #[blanket(derive(Arc))]
 pub trait AuthenticationRepository<Context>: Component {
     async fn get_by_mail(&self, ctx: Context, mail: String) -> Result<Option<Authentication>>;
-    async fn create(&self, ctx: Context, authentication: NewAuthentication) -> Result<()>;
+    async fn create(&self, ctx: Context, authentication: Authentication) -> Result<()>;
     async fn update_password(&self, ctx: Context, updated: UpdatePassword) -> Result<()>;
     async fn add_password_reset_code(
         &self,
@@ -30,24 +31,18 @@ pub trait UseAuthenticationRepository<Context> {
     fn authentication_repository(&self) -> Self::AuthenticationRepository;
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, new)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, new)]
 pub struct PasswordResetCode {
     pub code: String,
+    #[validate(email)]
     pub mail: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, new)]
+#[derive(Debug, Clone, Serialize, Deserialize, Validate, new)]
 pub struct UpdatePassword {
     pub account_id: String,
+    #[validate(email)]
     pub mail: String,
-    pub password: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, new)]
-pub struct NewAuthentication {
-    pub account_id: String,
-    pub mail: String,
-    pub salt: String,
     pub password: String,
 }
 
@@ -60,7 +55,7 @@ mock! {
     #[async_trait]
     impl AuthenticationRepository<()> for AuthenticationRepository {
         async fn get_by_mail(&self, ctx: (), mail: String) -> Result<Option<Authentication>>;
-        async fn create(&self, ctx: (), authentication: NewAuthentication) -> Result<()>;
+        async fn create(&self, ctx: (), authentication: Authentication) -> Result<()>;
         async fn update_password(&self, ctx: (), updated: UpdatePassword) -> Result<()>;
         async fn add_password_reset_code(
             &self,

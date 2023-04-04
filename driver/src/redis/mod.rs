@@ -1,4 +1,4 @@
-use crate::redis::config::RedisConfig;
+use crate::redis::config::Config;
 use application::interface::Component;
 use async_trait::async_trait;
 use bb8_redis::bb8;
@@ -36,7 +36,7 @@ pub trait RedisReaderContext: Component {
 pub trait RedisContext: RedisPrimaryContext + RedisReaderContext {}
 
 impl Redis {
-    pub async fn new(config: RedisConfig) -> Result<Redis> {
+    pub async fn new(config: Config) -> Result<Redis> {
         let manager = RedisConnectionManager::new(config.primary_url.clone())?;
         let primary = RedisPool::builder()
             .min_idle(config.min_idle)

@@ -10,7 +10,9 @@ use kernel::Result;
 use log;
 use std::string::ToString;
 
-const CSRF_CHECK_WHITELIST: &[&str] = &["/api/v1/status"];
+static CSRF_CHECK_WHITELIST: &[&str] = &["/api/v1/status"];
+
+static X_FROM: HeaderName = HeaderName::from_static("x-from");
 
 pub(crate) async fn csrf_protection<B>(
     request: Request<B>,
@@ -30,28 +32,24 @@ pub(crate) async fn csrf_protection<B>(
         ));
     }
     let is_websocket = get_header(headers, &SEC_WEBSOCKET_PROTOCOL)?.is_some();
-    let is_event_stream = get_header(headers, &ACCEPT)? == Some("text/event-stream".to_string());
-    let x_from = get_header(headers, &HeaderName::from_static("x-from"))?;
+    let is_event_stream =
+        get_header(headers, &ACCEPT)? == Some(mime::TEXT_EVENT_STREAM.to_string());
+    let x_from = get_header(headers, &X_FROM)?;
     let env_urls: String = get_var::<String>("CSRF_ALLOW_X_FROM")?;
     match x_from {
         Some(_) => match get_header(headers, &ORIGIN)? {
-            Some(origin) if !env_urls.contains(&origin) => {
-                return Ok(response_with_code(
-                    StatusCode::FORBIDDEN,
-                    format!("invalid origin: {origin}"),
-                ));
-            }
-            _ => (),
-        },
-        _ if !is_websocket && !is_event_stream => {
-            return Ok(response_with_code(
+            Some(origin) if !env_urls.contains(&origin) => Ok(response_with_code(
                 StatusCode::FORBIDDEN,
-                format!("invalid x-from: {x_from:?}"),
-            ))
-        }
-        _ => (),
+                format!("invalid origin: {origin}"),
+            )),
+            _ => Ok(next.run(request).await),
+        },
+        _ if is_websocket || is_event_stream => Ok(next.run(request).await),
+        _ => Ok(response_with_code(
+            StatusCode::FORBIDDEN,
+            format!("invalid x-from: {x_from:?}"),
+        )),
     }
-    Ok(next.run(request).await)
 }
 
 #[derive(Debug)]

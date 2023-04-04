@@ -26,8 +26,8 @@ where
     Deps: StatusUseCaseDeps<C>,
 {
     async fn handle(&self, _: StatusInput) -> Result<StatusOutput> {
-        let version = kernel::build_info::get_version();
-        let build_timestamp = kernel::build_info::BUILT_TIME_UTC.to_string();
+        let version = kernel::build_info::git_commit_hash();
+        let build_timestamp = kernel::build_info::build_time_utc();
         Ok(StatusOutput::new(version, build_timestamp))
     }
 }

@@ -21,6 +21,13 @@ where
     get_var(name).unwrap_or(d)
 }
 
+pub fn get_var_or_else<T: FromStr>(name: &str, op: impl FnOnce() -> T) -> T
+where
+    <T as FromStr>::Err: Debug,
+{
+    get_var(name).unwrap_or_else(|_| op())
+}
+
 pub fn var_is_opt<T: FromStr + PartialEq>(name: &str, value: &Option<T>) -> bool
 where
     <T as FromStr>::Err: Debug,

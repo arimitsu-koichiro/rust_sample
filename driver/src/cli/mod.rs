@@ -15,18 +15,17 @@ struct Args {
     #[arg(short, long)]
     channel: String,
 }
-pub async fn listen_pubsub<M: Mods<P>, P: CliPresenter>(mods: M) -> Result<()> {
+pub async fn listen_pubsub<M: Mods<P>, P: Presenter>(mods: M) -> Result<()> {
     let args = Args::parse();
     let _ = dispatch(SubscribeInput::new(args.channel), mods).await;
     Ok(())
 }
 
 trait_set! {
-    pub trait Mods<P: CliPresenter> = Component
+    pub trait Mods<P: Presenter> = Component
     + UseUseCase<SubscribeInput, SubscribeOutput>
     + UsePresenter<Presenter = P>
     ;
-    pub trait CliPresenter = Component
-    + Present<Result<SubscribeOutput>>
+    pub trait Presenter = Component + Present<Result<SubscribeOutput>>
     ;
 }

@@ -30,19 +30,19 @@ where
     Deps: GetAccountUseCaseDeps<C>,
 {
     async fn handle(&self, input: GetAccountInput) -> Result<GetAccountOutput> {
-        let db = self.deps.context().await?;
+        let ctx = self.deps.context().await?;
         if input.id == "me" {
             let Some(session_id) = input.session_id else {
                 bail!(forbidden!("required session."))
             };
-            let Some(session) = self.deps.session_repository().get(db.clone(), session_id).await? else {
+            let Some(session) = self.deps.session_repository().get(ctx.clone(), session_id).await? else {
                 bail!(forbidden!("required session."))
             };
             return Ok(GetAccountOutput {
                 account: Some(session.account),
             });
         }
-        let account = self.deps.account_repository().get(db, input.id).await?;
+        let account = self.deps.account_repository().get(ctx, input.id).await?;
         Ok(GetAccountOutput::new(account))
     }
 }
@@ -68,7 +68,8 @@ mod tests {
     use crate::usecase::account::{GetAccountInput, GetAccountUseCase};
     use crate::usecase::UseCase;
     use async_trait::async_trait;
-    use chrono::DateTime;
+
+    use helper::time::current_time;
     use kernel::entity::Account;
     use kernel::Result;
     use mockall::predicate;
@@ -114,7 +115,7 @@ mod tests {
                     id,
                     "name".to_string(),
                     "display_name".to_string(),
-                    DateTime::default(),
+                    current_time(),
                 )))
             });
         let mods = TestMods {
@@ -129,5 +130,38 @@ mod tests {
             })
             .await;
         assert_eq!(output.unwrap().account.unwrap().id, "id".to_string());
+    }
+    #[tokio::test]
+    async fn get_account_with_me() {
+        let mock_account_repo = MockAccountRepository::default();
+        let mut mock_session_repo = MockSessionRepository::default();
+        let now = current_time();
+        mock_session_repo
+            .expect_get()
+            .with(predicate::eq(()), predicate::eq("session_id".to_string()))
+            .return_once(move |_, session_id| {
+                Ok(Some(kernel::entity::Session::new(
+                    session_id,
+                    Account::new(
+                        "account_id".to_string(),
+                        "name".to_string(),
+                        "display_name".to_string(),
+                        now,
+                    ),
+                    now,
+                )))
+            });
+        let mods = TestMods {
+            mock_account_repo: Arc::new(mock_account_repo),
+            mock_session_repo: Arc::new(mock_session_repo),
+        };
+        let interactor = GetAccountUseCase::new(mods);
+        let input = GetAccountInput {
+            id: "me".to_string(),
+            session_id: Some("session_id".to_string()),
+        };
+        let output = interactor.handle(input).await;
+        let account = output.unwrap().account.unwrap();
+        assert_eq!(account.id, "account_id".to_string());
     }
 }

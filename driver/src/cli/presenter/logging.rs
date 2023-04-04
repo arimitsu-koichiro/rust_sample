@@ -1,5 +1,5 @@
-use crate::{Present, Presenter};
-use application::usecase::channel::{PubSubOutput, SubscribeOutput};
+use crate::Present;
+use application::usecase::channel::SubscribeOutput;
 use async_trait::async_trait;
 use futures::StreamExt;
 use kernel::Result;
@@ -8,20 +8,6 @@ use tokio_stream::wrappers::ReceiverStream;
 
 #[derive(Clone, Default)]
 pub struct LoggingPresenter;
-
-impl Presenter for LoggingPresenter {}
-
-#[async_trait]
-impl Present<Result<PubSubOutput>> for LoggingPresenter {
-    type Output = ();
-
-    async fn present(&self, data: Result<PubSubOutput>, _: ()) -> Self::Output {
-        let Ok(output) = data else {
-            return;
-        };
-        logging_receiver(output.rx).await;
-    }
-}
 
 #[async_trait]
 impl Present<Result<SubscribeOutput>> for LoggingPresenter {

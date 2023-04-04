@@ -1,4 +1,4 @@
-use crate::http::server::api::config::ApiConfig;
+use crate::http::server::api::config::Config;
 use crate::http::server::api::route::define_route;
 use crate::{Present, UsePresenter};
 use anyhow::Context as _;
@@ -27,7 +27,7 @@ mod handler;
 pub mod presenter;
 mod route;
 
-pub async fn start<M: Mods<P>, P: ServerPresenter>(config: ApiConfig, mods: M) -> Result<()> {
+pub async fn start<M: Mods<P>, P: Presenter>(config: Config, mods: M) -> Result<()> {
     let app = define_route(mods);
     Server::bind(&config.bind_address)
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
@@ -36,7 +36,7 @@ pub async fn start<M: Mods<P>, P: ServerPresenter>(config: ApiConfig, mods: M) -
 }
 
 trait_set! {
-    pub trait Mods<P: ServerPresenter> = Component
+    pub trait Mods<P: Presenter> = Component
     + UseUseCase<StatusInput, StatusOutput>
     + UseUseCase<GetAccountInput, GetAccountOutput>
     + UseUseCase<GetAuthStatusInput, GetAuthStatusOutput>
@@ -53,7 +53,7 @@ trait_set! {
     + UsePresenter<Presenter = P>
     ;
     pub trait PresentResponse<D> = Present<Result<D>, Output = Result<Response, ()>>;
-    pub trait ServerPresenter = Component
+    pub trait Presenter = Component
     + PresentResponse<StatusOutput>
     + PresentResponse<GetAccountOutput>
     + PresentResponse<GetAuthStatusOutput>
